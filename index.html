@@ -991,8 +991,6 @@ async function saveServiceHistoryToDrive() {
   }
   
   try {
-    showLoadingState('Backing up to Google Drive...');
-    
     const fileId = await findOrCreateDataFile();
     const dataToSave = {
       services: serviceHistory,
@@ -1019,21 +1017,14 @@ async function saveServiceHistoryToDrive() {
     
     console.log('Successfully synced to Google Drive:', serviceHistory.length, 'records');
     updateDriveStatus(true, `✓ Synced ${serviceHistory.length} records to vmaint folder`);
-    hideLoadingState();
-    
-    // Show success message for first-time sync
-    if (serviceHistory.length > 0) {
-      showSuccessMessage(`${serviceHistory.length} records backed up to Google Drive!`);
-    }
     
   } catch (error) {
     console.error('Failed to sync to Google Drive:', error);
     updateDriveStatus(false, `Local only: ${serviceHistory.length} records - sync failed`);
-    hideLoadingState();
     
     // Only show error if user expects sync to work
     if (isSignedIn && gapi.client.getToken()) {
-      showErrorMessage('Google Drive backup failed. Data saved locally.');
+      console.warn('Google Drive backup failed. Data saved locally.');
     }
   }
 }
@@ -1118,17 +1109,29 @@ async function saveServiceHistory() {
 // Save individual service record (now uses Google Drive)
 async function saveServiceRecord(serviceRecord) {
   try {
-    // Add to local array
+    // Add to local array first
     serviceHistory.push(serviceRecord);
+    console.log('Added service record to local array:', serviceRecord);
     
-    // Save to Google Drive
+    // Save to localStorage and Google Drive
     await saveServiceHistoryToDrive();
     
     showSuccessMessage('Service record saved successfully!');
     return serviceRecord;
   } catch (error) {
     console.error('Failed to save service record:', error);
-    showErrorMessage('Failed to save service record.');
+    
+    // Even if Drive sync fails, the record is still saved locally
+    // So we should still show success for the local save
+    showSuccessMessage('Service record saved locally!');
+    
+    // Only show Drive error if user is signed in and expects sync
+    if (isSignedIn && gapi.client.getToken()) {
+      setTimeout(() => {
+        showErrorMessage('Google Drive sync failed, but data is saved locally.');
+      }, 2000);
+    }
+    
     return serviceRecord;
   }
 }
@@ -1137,35 +1140,60 @@ async function logService(event) {
   event.preventDefault();
   
   const item = document.getElementById('serviceItem').value;
-  const odometer = parseInt(document.getElementById('serviceOdometer').value);
+  const odometerValue = document.getElementById('serviceOdometer').value;
   const date = document.getElementById('serviceDate').value;
-  const cost = parseFloat(document.getElementById('serviceCost').value) || 0;
+  const costValue = document.getElementById('serviceCost').value;
   const notes = document.getElementById('serviceNotes').value;
   
-  if (!item || !odometer || !date) {
-    showErrorMessage('Please fill in all required fields');
+  // Validate required fields
+  if (!item || !odometerValue || !date) {
+    showErrorMessage('Please fill in all required fields (Service Item, Odometer, Date)');
     return;
   }
   
+  const odometer = parseInt(odometerValue);
+  const cost = parseFloat(costValue) || 0;
+  
+  // Validate odometer reading
+  if (isNaN(odometer) || odometer <= 0) {
+    showErrorMessage('Please enter a valid odometer reading');
+    return;
+  }
+  
+  console.log('Creating service record:', { item, odometer, date, cost, notes });
+  
   const serviceRecord = {
-    id: Date.now(),
+    id: Date.now() + Math.random(), // Ensure unique ID
     item,
     odometer,
     date,
     cost,
-    notes,
+    notes: notes.trim(),
     timestamp: new Date().toISOString()
   };
   
-  // Save to server (with fallback to local storage)
-  await saveServiceRecord(serviceRecord);
-  
-  // Clear form
-  clearForm();
-  
-  // Refresh current view if needed
-  if (currentTab === 'history') {
-    renderHistory();
+  try {
+    // Show loading state
+    showLoadingState('Saving service record...');
+    
+    // Save the service record
+    await saveServiceRecord(serviceRecord);
+    
+    // Clear form after successful save
+    clearForm();
+    
+    // Refresh current view if needed
+    if (currentTab === 'history') {
+      renderHistory();
+    }
+    
+    console.log('Service record saved successfully:', serviceRecord);
+    
+  } catch (error) {
+    console.error('Error in logService:', error);
+    showErrorMessage('Failed to save service record. Please try again.');
+  } finally {
+    hideLoadingState();
   }
 }
 
@@ -1654,5 +1682,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b366ab618a04c9',t:'MTc1OTkwMzA0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b373a1003704c9',t:'MTc1OTkwMzU4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

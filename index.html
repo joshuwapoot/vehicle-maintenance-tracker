@@ -81,9 +81,17 @@
         </button>
       </div>
       
-      <div id="driveStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 cursor-pointer" onclick="handleDriveStatusClick()">
-        <div class="w-2 h-2 rounded-full mr-2 bg-blue-500"></div>
-        <span>Ready to sync with Google Drive</span>
+      <div class="flex items-center space-x-2">
+        <div id="driveStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 cursor-pointer" onclick="handleDriveStatusClick()">
+          <div class="w-2 h-2 rounded-full mr-2 bg-blue-500"></div>
+          <span>Ready to sync with Google Drive</span>
+        </div>
+        <button id="syncButton" onclick="manualSync()" class="hidden inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors">
+          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Sync Now
+        </button>
       </div>
     </div>
   </div>
@@ -714,6 +722,7 @@ function skipDriveAccess() {
 // Google Drive status functions
 function updateDriveStatus(isConnected, message = '') {
   const statusElement = document.getElementById('driveStatus');
+  const syncButton = document.getElementById('syncButton');
   
   if (isConnected) {
     statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 cursor-pointer';
@@ -721,12 +730,20 @@ function updateDriveStatus(isConnected, message = '') {
       <div class="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
       <span>${message || 'Google Drive connected'}</span>
     `;
+    // Show sync button when connected
+    if (syncButton) {
+      syncButton.classList.remove('hidden');
+    }
   } else {
     statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200';
     statusElement.innerHTML = `
       <div class="w-2 h-2 rounded-full mr-2 bg-yellow-500"></div>
       <span>${message || 'Google Drive offline'} - Click to reconnect</span>
     `;
+    // Hide sync button when not connected
+    if (syncButton) {
+      syncButton.classList.add('hidden');
+    }
   }
 }
 
@@ -738,10 +755,75 @@ function handleDriveStatusClick() {
   } else if (!isSignedIn) {
     // User is not signed in
     showSuccessMessage('Please sign in with Google first to enable Drive sync');
+  } else if (isSignedIn && gapi.client.getToken()) {
+    // User is signed in and has token - trigger manual sync
+    manualSync();
+  }
+}
+
+// Manual sync function
+async function manualSync() {
+  if (!isSignedIn) {
+    showErrorMessage('Please sign in with Google first');
+    return;
+  }
+  
+  if (!gapi.client.getToken()) {
+    showErrorMessage('Google Drive access required. Click status to reconnect.');
+    return;
+  }
+  
+  try {
+    showLoadingState('Syncing with Google Drive...');
+    
+    // Force a fresh sync
+    await loadServiceHistoryFromDrive();
+    await saveServiceHistoryToDrive();
+    
+    showSuccessMessage('Sync completed successfully!');
+  } catch (error) {
+    console.error('Manual sync failed:', error);
+    showErrorMessage('Sync failed. Please try again.');
+  } finally {
+    hideLoadingState();
   }
 }
 
 // Google Drive API Functions
+async function findOrCreateVmaintFolder() {
+  try {
+    // Search for existing vmaint folder
+    const response = await gapi.client.drive.files.list({
+      q: "name='vmaint' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+      spaces: 'drive',
+      fields: 'files(id, name)'
+    });
+    
+    if (response.result.files && response.result.files.length > 0) {
+      console.log('Found existing vmaint folder:', response.result.files[0].id);
+      return response.result.files[0].id;
+    }
+    
+    // Create vmaint folder if not found
+    const folderMetadata = {
+      name: 'vmaint',
+      mimeType: 'application/vnd.google-apps.folder',
+      description: 'Vehicle Maintenance Tracker Data Folder'
+    };
+    
+    const createResponse = await gapi.client.drive.files.create({
+      resource: folderMetadata,
+      fields: 'id'
+    });
+    
+    console.log('Created vmaint folder:', createResponse.result.id);
+    return createResponse.result.id;
+  } catch (error) {
+    console.error('Error finding/creating vmaint folder:', error);
+    throw error;
+  }
+}
+
 async function findOrCreateDataFile() {
   try {
     if (!currentUser) {
@@ -752,12 +834,15 @@ async function findOrCreateDataFile() {
       throw new Error('No access token available');
     }
     
-    // Create user-specific filename
-    const userFileName = `vehicle_maintenance_${currentUser.id}.json`;
+    // Get or create vmaint folder
+    const folderId = await findOrCreateVmaintFolder();
     
-    // Search for existing file in regular Drive space (not appDataFolder for better compatibility)
+    // Create user-specific filename
+    const userFileName = `maintenance_${currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+    
+    // Search for existing file in vmaint folder
     const response = await gapi.client.drive.files.list({
-      q: `name='${userFileName}' and trashed=false`,
+      q: `name='${userFileName}' and '${folderId}' in parents and trashed=false`,
       spaces: 'drive',
       fields: 'files(id, name)'
     });
@@ -769,44 +854,30 @@ async function findOrCreateDataFile() {
     
     // Create new file if not found
     const initialData = {
-      services: [],
+      services: serviceHistory, // Use current local data
       userId: currentUser.id,
       userEmail: currentUser.email,
       userName: currentUser.name,
       createdAt: new Date().toISOString(),
+      lastSynced: new Date().toISOString(),
       version: '1.0'
     };
     
-    // Use multipart upload for better compatibility
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const close_delim = "\r\n--" + boundary + "--";
-    
-    const metadata = {
-      'name': userFileName,
-      'description': 'Vehicle Maintenance Tracker Data'
+    const fileMetadata = {
+      name: userFileName,
+      parents: [folderId],
+      description: `Vehicle Maintenance Data for ${currentUser.name}`
     };
     
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(metadata) +
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(initialData) +
-      close_delim;
-    
-    const request = gapi.client.request({
-      'path': 'https://www.googleapis.com/upload/drive/v3/files',
-      'method': 'POST',
-      'params': {'uploadType': 'multipart'},
-      'headers': {
-        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+    const createResponse = await gapi.client.drive.files.create({
+      resource: fileMetadata,
+      media: {
+        mimeType: 'application/json',
+        body: JSON.stringify(initialData, null, 2)
       },
-      'body': multipartRequestBody
+      fields: 'id'
     });
     
-    const createResponse = await request;
     console.log('Created new file:', createResponse.result.id);
     return createResponse.result.id;
   } catch (error) {
@@ -818,15 +889,18 @@ async function findOrCreateDataFile() {
 async function loadServiceHistoryFromDrive() {
   const storageKey = getUserStorageKey();
   
+  // Always load from localStorage first (primary storage)
+  serviceHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  console.log('Loaded from localStorage:', serviceHistory.length, 'records');
+  
   if (!isSignedIn || !gapi.client.getToken()) {
-    // Fallback to user-specific localStorage if not signed in or no token
-    serviceHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    console.log('Loading from localStorage:', serviceHistory.length, 'records');
+    console.log('Not signed in or no token - using local data only');
+    updateDriveStatus(false, `Local storage: ${serviceHistory.length} records`);
     return serviceHistory;
   }
   
   try {
-    showLoadingState('Loading your maintenance data...');
+    showLoadingState('Syncing with Google Drive...');
     
     const fileId = await findOrCreateDataFile();
     
@@ -835,53 +909,82 @@ async function loadServiceHistoryFromDrive() {
       alt: 'media'
     });
     
-    let data;
+    let driveData;
     try {
-      data = JSON.parse(response.body);
+      driveData = JSON.parse(response.body);
     } catch (parseError) {
-      console.warn('Failed to parse Drive data, using empty data');
-      data = { services: [] };
+      console.warn('Failed to parse Drive data, keeping local data');
+      updateDriveStatus(true, `Local data preserved (${serviceHistory.length} records)`);
+      hideLoadingState();
+      return serviceHistory;
     }
     
     // Verify data belongs to current user
-    if (data.userId && data.userId !== currentUser.id) {
-      console.warn('Data file user mismatch, using empty data');
-      data = { services: [] };
+    if (driveData.userId && driveData.userId !== currentUser.id) {
+      console.warn('Data file user mismatch, keeping local data');
+      updateDriveStatus(true, `Local data preserved (${serviceHistory.length} records)`);
+      hideLoadingState();
+      return serviceHistory;
     }
     
-    serviceHistory = Array.isArray(data.services) ? data.services : [];
-    console.log('Loaded from Google Drive:', serviceHistory.length, 'records');
+    const driveServices = Array.isArray(driveData.services) ? driveData.services : [];
+    console.log('Found in Google Drive:', driveServices.length, 'records');
     
-    // Also save to user-specific localStorage as backup
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+    // Merge local and drive data (prefer newer records)
+    const mergedServices = mergeServiceData(serviceHistory, driveServices);
     
-    updateDriveStatus(true, `Loaded ${serviceHistory.length} records from Google Drive`);
+    if (mergedServices.length !== serviceHistory.length) {
+      serviceHistory = mergedServices;
+      // Save merged data back to localStorage
+      localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+      console.log('Merged data:', serviceHistory.length, 'records');
+      
+      // Also update Drive with merged data
+      await saveServiceHistoryToDrive();
+    }
+    
+    updateDriveStatus(true, `Synced: ${serviceHistory.length} records`);
     hideLoadingState();
     return serviceHistory;
   } catch (error) {
-    console.error('Failed to load from Google Drive:', error);
-    // Fallback to user-specific localStorage
-    serviceHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    updateDriveStatus(false, `Using local data (${serviceHistory.length} records)`);
+    console.error('Failed to sync with Google Drive:', error);
+    updateDriveStatus(false, `Local only: ${serviceHistory.length} records - sync failed`);
     hideLoadingState();
     return serviceHistory;
   }
 }
 
+// Merge local and drive service data, avoiding duplicates
+function mergeServiceData(localServices, driveServices) {
+  const merged = [...localServices];
+  const localIds = new Set(localServices.map(s => s.id));
+  
+  // Add drive services that don't exist locally
+  driveServices.forEach(driveService => {
+    if (!localIds.has(driveService.id)) {
+      merged.push(driveService);
+    }
+  });
+  
+  // Sort by timestamp (newest first)
+  return merged.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+}
+
 async function saveServiceHistoryToDrive() {
   const storageKey = getUserStorageKey();
   
-  // Always save to user-specific localStorage as backup
+  // Always save to localStorage first (primary storage)
   localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
   console.log('Saved to localStorage:', serviceHistory.length, 'records');
   
   if (!isSignedIn || !gapi.client.getToken()) {
     console.log('Skipping Drive sync - not signed in or no token');
-    return; // Skip Drive sync if not signed in or no token
+    updateDriveStatus(false, `Local only: ${serviceHistory.length} records`);
+    return;
   }
   
   try {
-    showLoadingState('Syncing your data to Google Drive...');
+    showLoadingState('Backing up to Google Drive...');
     
     const fileId = await findOrCreateDataFile();
     const dataToSave = {
@@ -889,41 +992,42 @@ async function saveServiceHistoryToDrive() {
       userId: currentUser.id,
       userEmail: currentUser.email,
       userName: currentUser.name,
-      lastUpdated: new Date().toISOString(),
+      lastSynced: new Date().toISOString(),
+      totalRecords: serviceHistory.length,
       version: '1.0'
     };
     
-    // Use multipart upload for updating the file
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const close_delim = "\r\n--" + boundary + "--";
-    
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(dataToSave) +
-      close_delim;
-    
+    // Use simple media upload for better reliability
     await gapi.client.request({
       path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
       method: 'PATCH',
       params: {
-        uploadType: 'multipart'
+        uploadType: 'media'
       },
       headers: {
-        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+        'Content-Type': 'application/json'
       },
-      body: multipartRequestBody
+      body: JSON.stringify(dataToSave, null, 2)
     });
     
-    console.log('Saved to Google Drive:', serviceHistory.length, 'records');
-    updateDriveStatus(true, `Synced ${serviceHistory.length} records to Google Drive`);
+    console.log('Successfully synced to Google Drive:', serviceHistory.length, 'records');
+    updateDriveStatus(true, `✓ Synced ${serviceHistory.length} records to vmaint folder`);
     hideLoadingState();
+    
+    // Show success message for first-time sync
+    if (serviceHistory.length > 0) {
+      showSuccessMessage(`${serviceHistory.length} records backed up to Google Drive!`);
+    }
+    
   } catch (error) {
-    console.error('Failed to save to Google Drive:', error);
-    updateDriveStatus(false, `Local save only (${serviceHistory.length} records)`);
+    console.error('Failed to sync to Google Drive:', error);
+    updateDriveStatus(false, `Local only: ${serviceHistory.length} records - sync failed`);
     hideLoadingState();
-    showErrorMessage('Data saved locally. Google Drive sync failed.');
+    
+    // Only show error if user expects sync to work
+    if (isSignedIn && gapi.client.getToken()) {
+      showErrorMessage('Google Drive backup failed. Data saved locally.');
+    }
   }
 }
 
@@ -1523,5 +1627,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b34298725ffee7',t:'MTc1OTkwMTU3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b3617715b204c9',t:'MTc1OTkwMjgzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -92,6 +92,12 @@
           </svg>
           Sync Now
         </button>
+        <button id="testDriveButton" onclick="testDriveConnection()" class="hidden inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors">
+          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Test Drive
+        </button>
       </div>
     </div>
   </div>
@@ -730,6 +736,7 @@ function skipDriveAccess() {
 function updateDriveStatus(isConnected, message = '') {
   const statusElement = document.getElementById('driveStatus');
   const syncButton = document.getElementById('syncButton');
+  const testDriveButton = document.getElementById('testDriveButton');
   
   if (isConnected) {
     statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 cursor-pointer';
@@ -737,9 +744,12 @@ function updateDriveStatus(isConnected, message = '') {
       <div class="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
       <span>${message || 'Google Drive connected'}</span>
     `;
-    // Show sync button when connected
+    // Show sync and test buttons when connected
     if (syncButton) {
       syncButton.classList.remove('hidden');
+    }
+    if (testDriveButton) {
+      testDriveButton.classList.remove('hidden');
     }
   } else {
     statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200';
@@ -747,9 +757,12 @@ function updateDriveStatus(isConnected, message = '') {
       <div class="w-2 h-2 rounded-full mr-2 bg-yellow-500"></div>
       <span>${message || 'Google Drive offline'} - Click to reconnect</span>
     `;
-    // Hide sync button when not connected
+    // Hide sync and test buttons when not connected
     if (syncButton) {
       syncButton.classList.add('hidden');
+    }
+    if (testDriveButton) {
+      testDriveButton.classList.add('hidden');
     }
   }
 }
@@ -768,6 +781,60 @@ function handleDriveStatusClick() {
   }
 }
 
+// Test Drive connection function
+async function testDriveConnection() {
+  console.log('=== DRIVE CONNECTION TEST ===');
+  console.log('Signed in:', isSignedIn);
+  console.log('Current user:', currentUser);
+  
+  if (!isSignedIn) {
+    showErrorMessage('Please sign in with Google first');
+    return;
+  }
+  
+  const token = gapi.client.getToken();
+  console.log('Token available:', !!token);
+  console.log('Access token:', token?.access_token ? 'Present' : 'Missing');
+  
+  if (!token || !token.access_token) {
+    showErrorMessage('No access token. Please reconnect to Google Drive.');
+    return;
+  }
+  
+  try {
+    showLoadingState('Testing Google Drive connection...');
+    
+    // Test basic Drive API access
+    console.log('Testing Drive API access...');
+    const aboutResponse = await gapi.client.drive.about.get({
+      fields: 'user,storageQuota'
+    });
+    
+    console.log('Drive API response:', aboutResponse);
+    
+    if (aboutResponse.status === 200) {
+      const user = aboutResponse.result.user;
+      showSuccessMessage(`Drive connected! User: ${user.displayName}`);
+      console.log('Drive connection test successful');
+      
+      // Test folder creation/access
+      console.log('Testing folder access...');
+      const folderId = await findOrCreateVmaintFolder();
+      console.log('Folder ID:', folderId);
+      
+      showSuccessMessage('Drive folder access confirmed!');
+    } else {
+      throw new Error(`Drive API returned status: ${aboutResponse.status}`);
+    }
+    
+  } catch (error) {
+    console.error('Drive connection test failed:', error);
+    showErrorMessage(`Drive test failed: ${error.message}`);
+  } finally {
+    hideLoadingState();
+  }
+}
+
 // Manual sync function
 async function manualSync() {
   if (!isSignedIn) {
@@ -782,15 +849,21 @@ async function manualSync() {
   
   try {
     showLoadingState('Syncing with Google Drive...');
+    console.log('Manual sync started...');
+    console.log('Current user:', currentUser);
+    console.log('Service history length:', serviceHistory.length);
+    console.log('Access token available:', !!gapi.client.getToken()?.access_token);
     
     // Force a fresh sync
     await loadServiceHistoryFromDrive();
     await saveServiceHistoryToDrive();
     
     showSuccessMessage('Sync completed successfully!');
+    console.log('Manual sync completed successfully');
   } catch (error) {
     console.error('Manual sync failed:', error);
-    showErrorMessage('Sync failed. Please try again.');
+    console.error('Error details:', error.message, error.stack);
+    showErrorMessage(`Sync failed: ${error.message}`);
   } finally {
     hideLoadingState();
   }
@@ -991,7 +1064,10 @@ async function saveServiceHistoryToDrive() {
   }
   
   try {
+    console.log('Starting Google Drive sync...');
     const fileId = await findOrCreateDataFile();
+    console.log('File ID obtained:', fileId);
+    
     const dataToSave = {
       services: serviceHistory,
       userId: currentUser.id,
@@ -1002,29 +1078,73 @@ async function saveServiceHistoryToDrive() {
       version: '1.0'
     };
     
-    // Use simple media upload for better reliability
-    await gapi.client.request({
-      path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-      method: 'PATCH',
-      params: {
-        uploadType: 'media'
+    console.log('Data to save:', dataToSave);
+    
+    // Check if token is still valid
+    const token = gapi.client.getToken();
+    if (!token || !token.access_token) {
+      throw new Error('No valid access token available');
+    }
+    
+    console.log('Token is valid, proceeding with upload...');
+    
+    // Use multipart upload for better reliability
+    const boundary = '-------314159265358979323846';
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const close_delim = "\r\n--" + boundary + "--";
+    
+    const metadata = {
+      'name': `maintenance_${currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}.json`,
+      'description': `Vehicle Maintenance Data for ${currentUser.name}`
+    };
+    
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(dataToSave, null, 2) +
+      close_delim;
+    
+    const request = await gapi.client.request({
+      'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+      'method': 'PATCH',
+      'params': {'uploadType': 'multipart'},
+      'headers': {
+        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
       },
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dataToSave, null, 2)
+      'body': multipartRequestBody
     });
     
-    console.log('Successfully synced to Google Drive:', serviceHistory.length, 'records');
-    updateDriveStatus(true, `✓ Synced ${serviceHistory.length} records to vmaint folder`);
+    console.log('Google Drive upload response:', request);
+    
+    if (request.status === 200) {
+      console.log('Successfully synced to Google Drive:', serviceHistory.length, 'records');
+      updateDriveStatus(true, `✓ Synced ${serviceHistory.length} records to Google Drive`);
+      
+      // Show success message for Drive sync
+      if (serviceHistory.length > 0) {
+        setTimeout(() => {
+          showSuccessMessage(`${serviceHistory.length} records backed up to Google Drive!`);
+        }, 1000);
+      }
+    } else {
+      throw new Error(`Upload failed with status: ${request.status}`);
+    }
     
   } catch (error) {
     console.error('Failed to sync to Google Drive:', error);
+    console.error('Error details:', error.message, error.stack);
+    
     updateDriveStatus(false, `Local only: ${serviceHistory.length} records - sync failed`);
     
-    // Only show error if user expects sync to work
+    // Show detailed error for debugging
     if (isSignedIn && gapi.client.getToken()) {
-      console.warn('Google Drive backup failed. Data saved locally.');
+      console.warn('Google Drive backup failed:', error.message);
+      setTimeout(() => {
+        showErrorMessage(`Drive sync failed: ${error.message}`);
+      }, 1000);
     }
   }
 }
@@ -1682,5 +1802,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b373a1003704c9',t:'MTc1OTkwMzU4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b37f8c63d8db1c',t:'MTc1OTkwNDA2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

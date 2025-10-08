@@ -25,7 +25,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Vehicle Maintenance Tracker v30
+      Vehicle Maintenance Tracker v33
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -465,7 +465,8 @@ async function loadServiceHistory() {
   const userId = currentUserId;
   
   try {
-    const snapshot = await db.collection('users').doc(userId).collection('serviceHistory').orderBy('timestamp', 'desc').get();
+    // Try the main collection first
+    const snapshot = await db.collection('vehicle_logs').doc(userId).collection('serviceHistory').orderBy('timestamp', 'desc').get();
     serviceHistory = [];
     
     snapshot.forEach(doc => {
@@ -479,8 +480,24 @@ async function loadServiceHistory() {
     return serviceHistory;
   } catch (error) {
     console.error('Firestore Load Failed:', error);
-    showErrorMessage('Failed to load data from Firebase. Using local storage.');
-    return loadServiceHistoryLocal();
+    
+    // Try alternative collection structure as fallback
+    try {
+      const fallbackSnapshot = await db.collection('users').doc(userId).collection('serviceHistory').orderBy('timestamp', 'desc').get();
+      serviceHistory = [];
+      
+      fallbackSnapshot.forEach(doc => {
+        serviceHistory.push({ id: doc.id, ...doc.data() });
+      });
+      
+      localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+      console.log(`Logs loaded from fallback collection: ${serviceHistory.length} records`);
+      return serviceHistory;
+    } catch (fallbackError) {
+      console.error('Fallback collection also failed:', fallbackError);
+      showErrorMessage('Firebase permissions issue. Using local storage only.');
+      return loadServiceHistoryLocal();
+    }
   }
 }
 
@@ -520,8 +537,8 @@ async function saveServiceRecord(serviceRecord) {
   }
 
   try {
-    // Save to Firebase Firestore
-    const docRef = await db.collection('users').doc(currentUserId).collection('serviceHistory').add(serviceRecord);
+    // Try to save to Firebase Firestore with main collection
+    const docRef = await db.collection('vehicle_logs').doc(currentUserId).collection('serviceHistory').add(serviceRecord);
     serviceRecord.id = docRef.id;
     serviceHistory.push(serviceRecord);
     
@@ -533,11 +550,23 @@ async function saveServiceRecord(serviceRecord) {
     return serviceRecord;
   } catch (error) {
     console.error('Firestore Save Failed:', error);
-    // Fallback to localStorage
-    serviceHistory.push(serviceRecord);
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
-    showErrorMessage('Failed to save to Firebase. Saved locally instead.');
-    return serviceRecord;
+    
+    // Try fallback collection structure
+    try {
+      const docRef = await db.collection('users').doc(currentUserId).collection('serviceHistory').add(serviceRecord);
+      serviceRecord.id = docRef.id;
+      serviceHistory.push(serviceRecord);
+      localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+      showSuccessMessage('Service record saved to Firebase (fallback)!');
+      return serviceRecord;
+    } catch (fallbackError) {
+      console.error('Fallback save also failed:', fallbackError);
+      // Final fallback to localStorage
+      serviceHistory.push(serviceRecord);
+      localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+      showErrorMessage('Firebase permissions issue. Saved locally instead.');
+      return serviceRecord;
+    }
   }
 }
 
@@ -672,10 +701,17 @@ async function deleteService(serviceId) {
   
   try {
     if (currentUserId) {
-      // Delete from Firebase Firestore
-      await db.collection('users').doc(currentUserId).collection('serviceHistory').doc(serviceId).delete();
-      console.log(`Service record deleted from Firebase for user: ${currentUserId}`);
-      showSuccessMessage('Service record deleted from Firebase!');
+      // Try to delete from Firebase Firestore with main collection
+      try {
+        await db.collection('vehicle_logs').doc(currentUserId).collection('serviceHistory').doc(serviceId).delete();
+        console.log(`Service record deleted from Firebase for user: ${currentUserId}`);
+        showSuccessMessage('Service record deleted from Firebase!');
+      } catch (deleteError) {
+        // Try fallback collection structure
+        await db.collection('users').doc(currentUserId).collection('serviceHistory').doc(serviceId).delete();
+        console.log(`Service record deleted from fallback collection for user: ${currentUserId}`);
+        showSuccessMessage('Service record deleted from Firebase!');
+      }
     } else {
       showSuccessMessage('Service record deleted locally!');
     }
@@ -689,7 +725,7 @@ async function deleteService(serviceId) {
     renderHistory();
   } catch (error) {
     console.error('Firestore Delete Failed:', error);
-    showErrorMessage('Failed to delete service record from Firebase. Removed locally.');
+    showErrorMessage('Firebase permissions issue. Removed locally only.');
     
     // Still remove from local array as fallback
     serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
@@ -938,5 +974,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b437496342db1c',t:'MTc1OTkxMTU5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b43bfea426db1c',t:'MTc1OTkxMTc4Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

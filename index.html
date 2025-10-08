@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Complete Vehicle Maintenance Tracker</title>
+  <title>Vehicle Maintenance Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
       box-sizing: border-box;
@@ -24,112 +22,26 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Complete Vehicle Maintenance Tracker 259
+      Vehicle Maintenance Tracker 315
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
     </p>
-    <p class="text-sm text-gray-500 max-w-xl mx-auto mt-2">
-      🔒 Multi-user support: Each Google account gets private, isolated maintenance data
-    </p>
     
-    <!-- Configuration Notice -->
-    <div id="configNotice" class="mt-4 max-w-4xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <!-- Local Storage Notice -->
+    <div class="mt-4 max-w-2xl mx-auto bg-green-50 border border-green-200 rounded-lg p-4">
       <div class="flex items-start space-x-3">
         <div class="flex-shrink-0">
-          <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <svg class="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
         <div class="flex-1">
-          <h3 class="text-sm font-semibold text-blue-800 mb-1">🔧 Setup Required for Google Drive Sync</h3>
-          <p class="text-sm text-blue-700 mb-2">
-            To enable Google Drive backup and multi-device sync, you'll need to configure your own Google API credentials:
-          </p>
-          <div class="text-xs text-blue-600 space-y-1">
-            <p><strong>1.</strong> Go to <a href="https://console.cloud.google.com" target="_blank" class="underline">Google Cloud Console</a></p>
-            <p><strong>2.</strong> Create a project and enable Google Drive API</p>
-            <p><strong>3.</strong> Create OAuth 2.0 credentials and API key</p>
-            <p><strong>4.</strong> Replace the placeholder values in the code</p>
-          </div>
-          <p class="text-xs text-blue-600 mt-2">
-            <strong>✅ Current Status:</strong> All features work locally without Google setup!
+          <h3 class="text-sm font-semibold text-green-800 mb-1">💾 Local Storage Active</h3>
+          <p class="text-sm text-green-700">
+            Your maintenance data is automatically saved to your browser's local storage. All features work offline!
           </p>
         </div>
-      </div>
-    </div>
-    
-    <!-- Google Authentication Status -->
-    <div id="authStatus" class="mt-4 space-y-3">
-      <div id="signInSection" class="flex flex-col items-center space-y-3">
-        <!-- Google One Tap Configuration -->
-        <div id="g_id_onload"
-             data-client_id=""
-             data-context="signin"
-             data-ux_mode="popup"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="true"
-             data-auto_select="true"
-             data-cancel_on_tap_outside="false"
-             data-prompt_parent_id="g_id_onload"
-             data-state_cookie_domain="single_host_origin">
-        </div>
-        
-        <!-- One Tap Prompt Container -->
-        <div id="oneTapContainer" class="w-full flex justify-center"></div>
-        
-        <!-- Standard Sign-In Button (fallback) -->
-        <div id="standardSignIn" class="flex flex-col items-center space-y-3">
-          <div class="g_id_signin" 
-               data-type="standard" 
-               data-shape="rectangular" 
-               data-theme="outline" 
-               data-text="signin_with" 
-               data-size="large" 
-               data-logo_alignment="left">
-          </div>
-          <p class="text-sm text-gray-600 text-center max-w-md">
-            Sign in with Google to sync your maintenance records across devices and backup to Google Drive
-          </p>
-        </div>
-      </div>
-      
-      <div id="signedInSection" class="hidden flex flex-col items-center space-y-2">
-        <div class="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg">
-          <img id="userPhoto" class="w-8 h-8 rounded-full" src="" alt="User">
-          <div>
-            <p id="userName" class="font-medium text-green-800"></p>
-            <p class="text-sm text-green-600">Signed in • Data synced to Google Drive</p>
-          </div>
-        </div>
-        <button onclick="signOut()" class="text-sm text-gray-500 hover:text-gray-700 underline">
-          Sign Out
-        </button>
-      </div>
-      
-      <div class="flex items-center space-x-2">
-        <div id="driveStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 cursor-pointer" onclick="handleDriveStatusClick()">
-          <div class="w-2 h-2 rounded-full mr-2 bg-blue-500"></div>
-          <span>Ready to sync with Google Drive</span>
-        </div>
-        <button id="syncButton" onclick="manualSync()" class="hidden inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors">
-          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          Sync Now
-        </button>
-        <button id="testDriveButton" onclick="testDriveConnection()" class="hidden inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors">
-          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          Test Drive
-        </button>
-        <button id="debugButton" onclick="showDebugInfo()" class="hidden inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors">
-          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          Debug Info
-        </button>
       </div>
     </div>
   </div>
@@ -409,1010 +321,6 @@ let maintenanceData = [];
 let currentTab = 'schedule';
 let serviceHistory = [];
 
-// Google API Configuration
-const GOOGLE_CONFIG = {
-  CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-  API_KEY: 'YOUR_GOOGLE_API_KEY',
-  DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
-  SCOPES: 'https://www.googleapis.com/auth/drive.file',
-  FILE_NAME: 'vehicle_maintenance_data.json'
-};
-
-let gapi;
-let tokenClient;
-let isSignedIn = false;
-let currentUser = null;
-let gDriveClient;
-
-// Google Authentication Functions
-function loadGapiClient() {
-  // Check if Google APIs are configured
-  if (!GOOGLE_CONFIG.API_KEY || GOOGLE_CONFIG.API_KEY.includes('YOUR_GOOGLE')) {
-    console.log('Google API not configured - using local storage only');
-    updateDriveStatus(false, 'Google API not configured - local storage only');
-    return;
-  }
-
-  // 1. Load the 'client' module first
-  gapi.load('client', async () => {
-    try {
-      // 2. Initialize the client (with your API Key and Discovery Doc)
-      await gapi.client.init({
-        apiKey: GOOGLE_CONFIG.API_KEY,
-        discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
-      });
-
-      // 3. Load the specific 'drive' library version (v3)
-      await gapi.client.load('drive', 'v3');
-      
-      // Success: gapi.client is now fully initialized and ready
-      console.log("Google Drive client loaded successfully.");
-
-      // Store the client for later use (optional but good practice)
-      gDriveClient = gapi.client; 
-      
-      // Initialize Google One Tap with Drive scope included
-      initializeGoogleOneTap();
-      
-      updateDriveStatus(true, 'Google Drive API ready');
-      
-    } catch (error) {
-      console.error("Error initializing Google Drive client:", error);
-      updateDriveStatus(false, 'Google Drive API failed to load');
-    }
-  });
-}
-
-function initializeGoogleOneTap() {
-  try {
-    // Check if we have valid credentials
-    if (!GOOGLE_CONFIG.CLIENT_ID || GOOGLE_CONFIG.CLIENT_ID.includes('YOUR_GOOGLE')) {
-      console.log('Google OAuth not configured - using local storage only');
-      updateDriveStatus(false, 'Google OAuth not configured - local storage only');
-      return;
-    }
-
-    // Initialize Google Identity Services
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CONFIG.CLIENT_ID,
-      callback: handleCredentialResponse,
-      auto_select: true,
-      cancel_on_tap_outside: false,
-      context: 'signin'
-    });
-
-    // Check if user is already signed in or has previous session
-    const hasRecentSession = localStorage.getItem('google_signin_recent');
-    const shouldShowOneTap = !isSignedIn && !hasRecentSession;
-
-    if (shouldShowOneTap) {
-      // Show One Tap prompt after a short delay
-      setTimeout(() => {
-        google.accounts.id.prompt((notification) => {
-          handleOneTapNotification(notification);
-        });
-      }, 1000);
-    }
-
-    // Render the standard sign-in button as fallback
-    google.accounts.id.renderButton(
-      document.querySelector('.g_id_signin'),
-      {
-        theme: 'outline',
-        size: 'large',
-        type: 'standard',
-        shape: 'rectangular',
-        text: 'signin_with',
-        logo_alignment: 'left'
-      }
-    );
-
-  } catch (error) {
-    console.error('Failed to initialize Google One Tap:', error);
-  }
-}
-
-function handleOneTapNotification(notification) {
-  console.log('One Tap notification:', notification);
-  
-  if (notification.isNotDisplayed()) {
-    console.log('One Tap not displayed:', notification.getNotDisplayedReason());
-    
-    // Show standard sign-in button if One Tap fails
-    const standardSignIn = document.getElementById('standardSignIn');
-    if (standardSignIn) {
-      standardSignIn.style.display = 'flex';
-    }
-  } else if (notification.isSkippedMoment()) {
-    console.log('One Tap skipped:', notification.getSkippedReason());
-    
-    // Mark that user has seen One Tap recently
-    localStorage.setItem('google_signin_recent', Date.now().toString());
-    
-    // Show standard sign-in button
-    const standardSignIn = document.getElementById('standardSignIn');
-    if (standardSignIn) {
-      standardSignIn.style.display = 'flex';
-    }
-  } else if (notification.isDismissedMoment()) {
-    console.log('One Tap dismissed:', notification.getDismissedReason());
-    
-    // Mark that user dismissed One Tap
-    localStorage.setItem('google_signin_dismissed', Date.now().toString());
-    
-    // Show standard sign-in button
-    const standardSignIn = document.getElementById('standardSignIn');
-    if (standardSignIn) {
-      standardSignIn.style.display = 'flex';
-    }
-  }
-}
-
-function handleCredentialResponse(response) {
-  try {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    currentUser = {
-      id: payload.sub,
-      name: payload.name,
-      email: payload.email,
-      picture: payload.picture
-    };
-    
-    isSignedIn = true;
-    
-    // Store user data and sign-in state for persistence
-    localStorage.setItem('google_signin_success', Date.now().toString());
-    localStorage.setItem('google_user_data', JSON.stringify(currentUser));
-    localStorage.removeItem('google_signin_recent');
-    localStorage.removeItem('google_signin_dismissed');
-    
-    updateAuthUI();
-    
-    // Hide One Tap and standard sign-in elements
-    const signInSection = document.getElementById('signInSection');
-    if (signInSection) {
-      signInSection.style.display = 'none';
-    }
-    
-    // Show welcome message with user's first name
-    const firstName = currentUser.name.split(' ')[0];
-    showSuccessMessage(`Welcome back, ${firstName}! 🎉`);
-    
-    // Add subtle animation to signed-in section
-    const signedInSection = document.getElementById('signedInSection');
-    if (signedInSection) {
-      signedInSection.classList.add('animate-pulse');
-      setTimeout(() => {
-        signedInSection.classList.remove('animate-pulse');
-      }, 2000);
-    }
-    
-    // Initialize Drive access with user-friendly flow
-    initializeDriveAccess();
-    
-    // Automatically load service history after authentication
-    setTimeout(async () => {
-      await loadServiceHistory();
-      showSuccessMessage(`Service history loaded: ${serviceHistory.length} records found`);
-    }, 1000);
-    
-  } catch (error) {
-    console.error('Error handling credential response:', error);
-    showErrorMessage('Failed to sign in with Google');
-  }
-}
-
-function updateAuthUI() {
-  const signInSection = document.getElementById('signInSection');
-  const signedInSection = document.getElementById('signedInSection');
-  const userName = document.getElementById('userName');
-  const userPhoto = document.getElementById('userPhoto');
-  
-  if (isSignedIn && currentUser) {
-    signInSection.classList.add('hidden');
-    signedInSection.classList.remove('hidden');
-    userName.textContent = currentUser.name;
-    userPhoto.src = currentUser.picture;
-    updateDriveStatus(true, 'Connected to Google Drive');
-  } else {
-    signInSection.classList.remove('hidden');
-    signedInSection.classList.add('hidden');
-    updateDriveStatus(false, 'Sign in to sync with Google Drive');
-  }
-}
-
-async function signOut() {
-  // Clear current user data
-  const previousUser = currentUser ? currentUser.name.split(' ')[0] : 'User';
-  
-  isSignedIn = false;
-  currentUser = null;
-  serviceHistory = []; // Clear current service history
-  
-  // Clear sign-in related localStorage
-  localStorage.removeItem('google_signin_success');
-  localStorage.removeItem('google_signin_recent');
-  localStorage.removeItem('google_signin_dismissed');
-  
-  // Reset UI to welcome state
-  document.getElementById("summaryDashboard").classList.add("hidden");
-  document.getElementById("navigationTabs").classList.add("hidden");
-  document.getElementById("filterTabs").classList.add("hidden");
-  document.getElementById("maintenanceCard").classList.add("hidden");
-  document.getElementById("historyCard").classList.add("hidden");
-  document.getElementById("logServiceCard").classList.add("hidden");
-  document.getElementById("welcomeState").classList.remove("hidden");
-  
-  // Clear odometer input
-  document.getElementById("odo").value = '';
-  
-  // Show sign-in section again
-  const signInSection = document.getElementById('signInSection');
-  if (signInSection) {
-    signInSection.style.display = 'flex';
-  }
-  
-  // Disable auto-select and revoke session
-  google.accounts.id.disableAutoSelect();
-  
-  // Revoke the token if available
-  if (gapi.client.getToken()) {
-    google.accounts.oauth2.revoke(gapi.client.getToken().access_token);
-  }
-  
-  updateAuthUI();
-  showSuccessMessage(`${previousUser} signed out successfully 👋`);
-  
-  // Re-initialize One Tap for next user (after a delay)
-  setTimeout(() => {
-    initializeGoogleOneTap();
-  }, 2000);
-}
-
-// Initialize Drive access after sign-in
-async function initializeDriveAccess() {
-  try {
-    // Create token client for Drive access
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CONFIG.CLIENT_ID,
-      scope: GOOGLE_CONFIG.SCOPES,
-      prompt: 'consent', // Always show consent screen for clarity
-      callback: async (response) => {
-        if (response.error) {
-          console.error('Drive authorization error:', response.error);
-          if (response.error === 'popup_closed_by_user' || response.error === 'user_cancelled') {
-            updateDriveStatus(false, 'Drive access cancelled - using local storage');
-            showErrorMessage('Google Drive access was cancelled. Your data will be saved locally only.');
-          } else {
-            updateDriveStatus(false, 'Google Drive connection failed');
-            showErrorMessage('Failed to connect to Google Drive. Using local storage.');
-          }
-          return;
-        }
-        
-        // Store the access token and expiry time
-        if (response.access_token) {
-          const expiryTime = Date.now() + (response.expires_in * 1000);
-          localStorage.setItem('google_access_token', response.access_token);
-          localStorage.setItem('google_token_expiry', expiryTime.toString());
-          
-          // Set the token in gapi client
-          gapi.client.setToken({
-            access_token: response.access_token,
-            expires_in: response.expires_in
-          });
-          
-          console.log('Access token stored and set');
-        }
-        
-        updateDriveStatus(true, `${currentUser.name}'s data synced to Google Drive`);
-        showSuccessMessage('Google Drive connected successfully! 🎉');
-        
-        // Load existing data from Drive immediately after connection
-        await loadServiceHistoryFromDrive();
-        showSuccessMessage(`Drive sync complete: ${serviceHistory.length} records loaded`);
-      },
-    });
-    
-    // Show user-friendly message before requesting Drive access
-    showDrivePermissionDialog();
-    
-  } catch (error) {
-    console.error('Failed to initialize Drive access:', error);
-    updateDriveStatus(false, 'Drive initialization failed');
-  }
-}
-
-// Show user-friendly dialog before Drive permission request
-function showDrivePermissionDialog() {
-  const toast = document.createElement('div');
-  toast.className = 'fixed top-4 right-4 z-50 bg-blue-600 text-white p-6 rounded-lg shadow-lg max-w-sm';
-  toast.innerHTML = `
-    <div class="flex items-start space-x-3">
-      <div class="flex-shrink-0">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
-        </svg>
-      </div>
-      <div class="flex-1">
-        <h3 class="font-semibold mb-1">Enable Google Drive Sync?</h3>
-        <p class="text-sm text-blue-100 mb-3">Backup your maintenance data to Google Drive for access across all devices.</p>
-        <div class="flex space-x-2">
-          <button onclick="requestDriveAccess()" class="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50">
-            Enable Sync
-          </button>
-          <button onclick="skipDriveAccess()" class="bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-800">
-            Skip
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(toast);
-  
-  // Auto-remove after 10 seconds if no action
-  setTimeout(() => {
-    if (toast.parentNode) {
-      skipDriveAccess();
-    }
-  }, 10000);
-}
-
-// Request Drive access when user clicks "Enable Sync"
-function requestDriveAccess() {
-  // Remove the dialog
-  const toast = document.querySelector('.fixed.top-4.right-4.z-50.bg-blue-600');
-  if (toast && toast.parentNode) {
-    toast.parentNode.removeChild(toast);
-  }
-  
-  // Show loading state
-  updateDriveStatus(true, 'Requesting Google Drive access...');
-  
-  // Request the token (this will show the Google permission popup)
-  tokenClient.requestAccessToken();
-}
-
-// Skip Drive access when user clicks "Skip"
-function skipDriveAccess() {
-  // Remove the dialog
-  const toast = document.querySelector('.fixed.top-4.right-4.z-50.bg-blue-600');
-  if (toast && toast.parentNode) {
-    toast.parentNode.removeChild(toast);
-  }
-  
-  updateDriveStatus(false, 'Using local storage only');
-  showSuccessMessage('You can enable Google Drive sync later from settings.');
-  
-  // Load from local storage
-  loadServiceHistoryFromDrive();
-}
-
-// Google Drive status functions
-function updateDriveStatus(isConnected, message = '') {
-  const statusElement = document.getElementById('driveStatus');
-  const syncButton = document.getElementById('syncButton');
-  const testDriveButton = document.getElementById('testDriveButton');
-  
-  if (isConnected) {
-    statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 cursor-pointer';
-    statusElement.innerHTML = `
-      <div class="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
-      <span>${message || 'Google Drive connected'}</span>
-    `;
-    // Show sync and test buttons when connected
-    if (syncButton) {
-      syncButton.classList.remove('hidden');
-    }
-    if (testDriveButton) {
-      testDriveButton.classList.remove('hidden');
-    }
-    const debugButton = document.getElementById('debugButton');
-    if (debugButton) {
-      debugButton.classList.remove('hidden');
-    }
-  } else {
-    statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200';
-    statusElement.innerHTML = `
-      <div class="w-2 h-2 rounded-full mr-2 bg-yellow-500"></div>
-      <span>${message || 'Google Drive offline'} - Click to reconnect</span>
-    `;
-    // Hide sync and test buttons when not connected
-    if (syncButton) {
-      syncButton.classList.add('hidden');
-    }
-    if (testDriveButton) {
-      testDriveButton.classList.add('hidden');
-    }
-    const debugButton = document.getElementById('debugButton');
-    if (debugButton) {
-      debugButton.classList.add('hidden');
-    }
-  }
-}
-
-// Handle Drive status click for reconnection
-function handleDriveStatusClick() {
-  if (isSignedIn && !gapi.client.getToken()) {
-    // User is signed in but doesn't have Drive access
-    showDrivePermissionDialog();
-  } else if (!isSignedIn) {
-    // User is not signed in
-    showSuccessMessage('Please sign in with Google first to enable Drive sync');
-  } else if (isSignedIn && gapi.client.getToken()) {
-    // User is signed in and has token - trigger manual sync
-    manualSync();
-  }
-}
-
-// Show comprehensive debug information
-function showDebugInfo() {
-  const token = gapi.client.getToken();
-  const debugInfo = {
-    'Authentication': {
-      'Signed In': isSignedIn,
-      'Current User': currentUser ? `${currentUser.name} (${currentUser.email})` : 'None',
-      'User ID': currentUser?.id || 'None'
-    },
-    'Google Drive Access': {
-      'Token Available': !!token,
-      'Access Token': token?.access_token ? `${token.access_token.substring(0, 20)}...` : 'Missing',
-      'Token Expires': token?.expires_in ? `${token.expires_in} seconds` : 'Unknown',
-      'Stored Token': localStorage.getItem('google_access_token') ? 'Present' : 'Missing',
-      'Token Expiry': localStorage.getItem('google_token_expiry') ? new Date(parseInt(localStorage.getItem('google_token_expiry'))).toLocaleString() : 'None'
-    },
-    'Service History': {
-      'Records Count': serviceHistory.length,
-      'Storage Key': getUserStorageKey(),
-      'Local Storage Size': localStorage.getItem(getUserStorageKey())?.length || 0,
-      'Sample Record': serviceHistory.length > 0 ? serviceHistory[0] : 'None'
-    },
-    'Google API Status': {
-      'GAPI Loaded': typeof gapi !== 'undefined',
-      'Client Initialized': !!gapi?.client,
-      'Drive API Available': !!gapi?.client?.drive,
-      'Token Client': !!tokenClient
-    }
-  };
-  
-  // Create debug modal
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-  modal.innerHTML = `
-    <div class="bg-white rounded-lg max-w-4xl w-full max-h-96 overflow-y-auto">
-      <div class="p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-800">🔍 Debug Information</h2>
-          <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <div class="space-y-4">
-          ${Object.entries(debugInfo).map(([category, data]) => `
-            <div class="border rounded-lg p-4">
-              <h3 class="font-semibold text-lg text-blue-600 mb-2">${category}</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                ${Object.entries(data).map(([key, value]) => `
-                  <div class="flex justify-between">
-                    <span class="font-medium text-gray-600">${key}:</span>
-                    <span class="text-gray-800 font-mono text-xs">${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-        <div class="mt-6 flex space-x-3">
-          <button onclick="copyDebugInfo()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            📋 Copy to Clipboard
-          </button>
-          <button onclick="testFullDriveFlow()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-            🧪 Test Full Drive Flow
-          </button>
-          <button onclick="this.closest('.fixed').remove()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  
-  // Store debug info globally for copying
-  window.debugInfo = debugInfo;
-}
-
-// Copy debug info to clipboard
-function copyDebugInfo() {
-  const debugText = JSON.stringify(window.debugInfo, null, 2);
-  navigator.clipboard.writeText(debugText).then(() => {
-    showSuccessMessage('Debug info copied to clipboard!');
-  }).catch(() => {
-    showErrorMessage('Failed to copy debug info');
-  });
-}
-
-// Test full Drive flow with detailed logging
-async function testFullDriveFlow() {
-  console.log('=== FULL DRIVE FLOW TEST ===');
-  
-  if (!isSignedIn) {
-    showErrorMessage('Please sign in with Google first');
-    return;
-  }
-  
-  const token = gapi.client.getToken();
-  if (!token || !token.access_token) {
-    showErrorMessage('No access token. Please reconnect to Google Drive.');
-    return;
-  }
-  
-  try {
-    showLoadingState('Testing complete Drive flow...');
-    
-    // Step 1: Test Drive API access
-    console.log('Step 1: Testing Drive API access...');
-    const aboutResponse = await gapi.client.drive.about.get({
-      fields: 'user,storageQuota'
-    });
-    console.log('✓ Drive API accessible:', aboutResponse.result.user.displayName);
-    
-    // Step 2: Test folder creation/access
-    console.log('Step 2: Testing folder access...');
-    const folderId = await findOrCreateVmaintFolder();
-    console.log('✓ Folder accessible:', folderId);
-    
-    // Step 3: Test file creation/access
-    console.log('Step 3: Testing file access...');
-    const fileId = await findOrCreateDataFile();
-    console.log('✓ File accessible:', fileId);
-    
-    // Step 4: Test file read
-    console.log('Step 4: Testing file read...');
-    const readResponse = await gapi.client.drive.files.get({
-      fileId: fileId,
-      alt: 'media'
-    });
-    console.log('✓ File readable, size:', readResponse.body.length);
-    
-    // Step 5: Test file write
-    console.log('Step 5: Testing file write...');
-    const testData = {
-      services: serviceHistory,
-      testWrite: new Date().toISOString(),
-      userId: currentUser.id
-    };
-    
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const close_delim = "\r\n--" + boundary + "--";
-    
-    const metadata = {
-      'name': `maintenance_${currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}.json`
-    };
-    
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(metadata) +
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(testData, null, 2) +
-      close_delim;
-    
-    const writeResponse = await gapi.client.request({
-      'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-      'method': 'PATCH',
-      'params': {'uploadType': 'multipart'},
-      'headers': {
-        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-      },
-      'body': multipartRequestBody
-    });
-    
-    console.log('✓ File writable, status:', writeResponse.status);
-    
-    if (writeResponse.status === 200) {
-      showSuccessMessage('🎉 All Drive tests passed! Google Drive is working correctly.');
-      console.log('=== ALL TESTS PASSED ===');
-    } else {
-      throw new Error(`Write test failed with status: ${writeResponse.status}`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Drive flow test failed:', error);
-    console.error('Error details:', error.message, error.stack);
-    showErrorMessage(`Drive flow test failed: ${error.message}`);
-  } finally {
-    hideLoadingState();
-  }
-}
-
-// Test Drive connection function
-async function testDriveConnection() {
-  console.log('=== DRIVE CONNECTION TEST ===');
-  console.log('Signed in:', isSignedIn);
-  console.log('Current user:', currentUser);
-  
-  if (!isSignedIn) {
-    showErrorMessage('Please sign in with Google first');
-    return;
-  }
-  
-  const token = gapi.client.getToken();
-  console.log('Token available:', !!token);
-  console.log('Access token:', token?.access_token ? 'Present' : 'Missing');
-  
-  if (!token || !token.access_token) {
-    showErrorMessage('No access token. Please reconnect to Google Drive.');
-    return;
-  }
-  
-  try {
-    showLoadingState('Testing Google Drive connection...');
-    
-    // Test basic Drive API access
-    console.log('Testing Drive API access...');
-    const aboutResponse = await gapi.client.drive.about.get({
-      fields: 'user,storageQuota'
-    });
-    
-    console.log('Drive API response:', aboutResponse);
-    
-    if (aboutResponse.status === 200) {
-      const user = aboutResponse.result.user;
-      showSuccessMessage(`Drive connected! User: ${user.displayName}`);
-      console.log('Drive connection test successful');
-      
-      // Test folder creation/access
-      console.log('Testing folder access...');
-      const folderId = await findOrCreateVmaintFolder();
-      console.log('Folder ID:', folderId);
-      
-      showSuccessMessage('Drive folder access confirmed!');
-    } else {
-      throw new Error(`Drive API returned status: ${aboutResponse.status}`);
-    }
-    
-  } catch (error) {
-    console.error('Drive connection test failed:', error);
-    showErrorMessage(`Drive test failed: ${error.message}`);
-  } finally {
-    hideLoadingState();
-  }
-}
-
-// Manual sync function
-async function manualSync() {
-  if (!isSignedIn) {
-    showErrorMessage('Please sign in with Google first');
-    return;
-  }
-  
-  if (!gapi.client.getToken()) {
-    showErrorMessage('Google Drive access required. Click status to reconnect.');
-    return;
-  }
-  
-  try {
-    showLoadingState('Syncing with Google Drive...');
-    console.log('Manual sync started...');
-    console.log('Current user:', currentUser);
-    console.log('Service history length:', serviceHistory.length);
-    console.log('Access token available:', !!gapi.client.getToken()?.access_token);
-    
-    // Force a fresh sync
-    await loadServiceHistoryFromDrive();
-    await saveServiceHistoryToDrive();
-    
-    showSuccessMessage('Sync completed successfully!');
-    console.log('Manual sync completed successfully');
-  } catch (error) {
-    console.error('Manual sync failed:', error);
-    console.error('Error details:', error.message, error.stack);
-    showErrorMessage(`Sync failed: ${error.message}`);
-  } finally {
-    hideLoadingState();
-  }
-}
-
-// Google Drive API Functions
-async function findOrCreateVmaintFolder() {
-  try {
-    // Search for existing vmaint folder
-    const response = await gapi.client.drive.files.list({
-      q: "name='vmaint' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-      spaces: 'drive',
-      fields: 'files(id, name)'
-    });
-    
-    if (response.result.files && response.result.files.length > 0) {
-      console.log('Found existing vmaint folder:', response.result.files[0].id);
-      return response.result.files[0].id;
-    }
-    
-    // Create vmaint folder if not found
-    const folderMetadata = {
-      name: 'vmaint',
-      mimeType: 'application/vnd.google-apps.folder',
-      description: 'Vehicle Maintenance Tracker Data Folder'
-    };
-    
-    const createResponse = await gapi.client.drive.files.create({
-      resource: folderMetadata,
-      fields: 'id'
-    });
-    
-    console.log('Created vmaint folder:', createResponse.result.id);
-    return createResponse.result.id;
-  } catch (error) {
-    console.error('Error finding/creating vmaint folder:', error);
-    throw error;
-  }
-}
-
-async function findOrCreateDataFile() {
-  try {
-    if (!currentUser) {
-      throw new Error('No user signed in');
-    }
-    
-    if (!gapi.client.getToken()) {
-      throw new Error('No access token available');
-    }
-    
-    // Get or create vmaint folder
-    const folderId = await findOrCreateVmaintFolder();
-    
-    // Create user-specific filename
-    const userFileName = `maintenance_${currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
-    
-    // Search for existing file in vmaint folder
-    const response = await gapi.client.drive.files.list({
-      q: `name='${userFileName}' and '${folderId}' in parents and trashed=false`,
-      spaces: 'drive',
-      fields: 'files(id, name)'
-    });
-    
-    if (response.result.files && response.result.files.length > 0) {
-      console.log('Found existing file:', response.result.files[0].id);
-      return response.result.files[0].id;
-    }
-    
-    // Create new file if not found
-    const initialData = {
-      services: serviceHistory, // Use current local data
-      userId: currentUser.id,
-      userEmail: currentUser.email,
-      userName: currentUser.name,
-      createdAt: new Date().toISOString(),
-      lastSynced: new Date().toISOString(),
-      version: '1.0'
-    };
-    
-    const fileMetadata = {
-      name: userFileName,
-      parents: [folderId],
-      description: `Vehicle Maintenance Data for ${currentUser.name}`
-    };
-    
-    const createResponse = await gapi.client.drive.files.create({
-      resource: fileMetadata,
-      media: {
-        mimeType: 'application/json',
-        body: JSON.stringify(initialData, null, 2)
-      },
-      fields: 'id'
-    });
-    
-    console.log('Created new file:', createResponse.result.id);
-    return createResponse.result.id;
-  } catch (error) {
-    console.error('Error finding/creating data file:', error);
-    throw error;
-  }
-}
-
-async function loadServiceHistoryFromDrive() {
-  const storageKey = getUserStorageKey();
-  
-  // Always load from localStorage first (primary storage)
-  serviceHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
-  console.log('Loaded from localStorage:', serviceHistory.length, 'records');
-  
-  if (!isSignedIn || !gapi.client.getToken()) {
-    console.log('Not signed in or no token - using local data only');
-    updateDriveStatus(false, `Local storage: ${serviceHistory.length} records`);
-    return serviceHistory;
-  }
-  
-  try {
-    showLoadingState('Syncing with Google Drive...');
-    
-    const fileId = await findOrCreateDataFile();
-    
-    const response = await gapi.client.drive.files.get({
-      fileId: fileId,
-      alt: 'media'
-    });
-    
-    let driveData;
-    try {
-      driveData = JSON.parse(response.body);
-    } catch (parseError) {
-      console.warn('Failed to parse Drive data, keeping local data');
-      updateDriveStatus(true, `Local data preserved (${serviceHistory.length} records)`);
-      hideLoadingState();
-      return serviceHistory;
-    }
-    
-    // Verify data belongs to current user
-    if (driveData.userId && driveData.userId !== currentUser.id) {
-      console.warn('Data file user mismatch, keeping local data');
-      updateDriveStatus(true, `Local data preserved (${serviceHistory.length} records)`);
-      hideLoadingState();
-      return serviceHistory;
-    }
-    
-    const driveServices = Array.isArray(driveData.services) ? driveData.services : [];
-    console.log('Found in Google Drive:', driveServices.length, 'records');
-    
-    // Merge local and drive data (prefer newer records)
-    const mergedServices = mergeServiceData(serviceHistory, driveServices);
-    
-    if (mergedServices.length !== serviceHistory.length) {
-      serviceHistory = mergedServices;
-      // Save merged data back to localStorage
-      localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-      console.log('Merged data:', serviceHistory.length, 'records');
-      
-      // Also update Drive with merged data
-      await saveServiceHistoryToDrive();
-    }
-    
-    updateDriveStatus(true, `Synced: ${serviceHistory.length} records`);
-    hideLoadingState();
-    return serviceHistory;
-  } catch (error) {
-    console.error('Failed to sync with Google Drive:', error);
-    updateDriveStatus(false, `Local only: ${serviceHistory.length} records - sync failed`);
-    hideLoadingState();
-    return serviceHistory;
-  }
-}
-
-// Merge local and drive service data, avoiding duplicates
-function mergeServiceData(localServices, driveServices) {
-  const merged = [...localServices];
-  const localIds = new Set(localServices.map(s => s.id));
-  
-  // Add drive services that don't exist locally
-  driveServices.forEach(driveService => {
-    if (!localIds.has(driveService.id)) {
-      merged.push(driveService);
-    }
-  });
-  
-  // Sort by timestamp (newest first)
-  return merged.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
-}
-
-async function saveServiceHistoryToDrive() {
-  const storageKey = getUserStorageKey();
-  
-  // Always save to localStorage first (primary storage)
-  localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-  console.log('Saved to localStorage:', serviceHistory.length, 'records');
-  
-  if (!isSignedIn || !gapi.client.getToken()) {
-    console.log('Skipping Drive sync - not signed in or no token');
-    updateDriveStatus(false, `Local only: ${serviceHistory.length} records`);
-    return;
-  }
-  
-  try {
-    console.log('Starting Google Drive sync...');
-    const fileId = await findOrCreateDataFile();
-    console.log('File ID obtained:', fileId);
-    
-    const dataToSave = {
-      services: serviceHistory,
-      userId: currentUser.id,
-      userEmail: currentUser.email,
-      userName: currentUser.name,
-      lastSynced: new Date().toISOString(),
-      totalRecords: serviceHistory.length,
-      version: '1.0'
-    };
-    
-    console.log('Data to save:', dataToSave);
-    
-    // Check if token is still valid
-    const token = gapi.client.getToken();
-    if (!token || !token.access_token) {
-      throw new Error('No valid access token available');
-    }
-    
-    console.log('Token is valid, proceeding with upload...');
-    
-    // Use multipart upload for better reliability
-    const boundary = '-------314159265358979323846';
-    const delimiter = "\r\n--" + boundary + "\r\n";
-    const close_delim = "\r\n--" + boundary + "--";
-    
-    const metadata = {
-      'name': `maintenance_${currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}.json`,
-      'description': `Vehicle Maintenance Data for ${currentUser.name}`
-    };
-    
-    const multipartRequestBody =
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(metadata) +
-      delimiter +
-      'Content-Type: application/json\r\n\r\n' +
-      JSON.stringify(dataToSave, null, 2) +
-      close_delim;
-    
-    const request = await gapi.client.request({
-      'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-      'method': 'PATCH',
-      'params': {'uploadType': 'multipart'},
-      'headers': {
-        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-      },
-      'body': multipartRequestBody
-    });
-    
-    console.log('Google Drive upload response:', request);
-    
-    if (request.status === 200) {
-      console.log('Successfully synced to Google Drive:', serviceHistory.length, 'records');
-      updateDriveStatus(true, `✓ Synced ${serviceHistory.length} records to Google Drive`);
-      
-      // Show success message for Drive sync
-      if (serviceHistory.length > 0) {
-        setTimeout(() => {
-          showSuccessMessage(`${serviceHistory.length} records backed up to Google Drive!`);
-        }, 1000);
-      }
-    } else {
-      throw new Error(`Upload failed with status: ${request.status}`);
-    }
-    
-  } catch (error) {
-    console.error('Failed to sync to Google Drive:', error);
-    console.error('Error details:', error.message, error.stack);
-    
-    updateDriveStatus(false, `Local only: ${serviceHistory.length} records - sync failed`);
-    
-    // Show detailed error for debugging
-    if (isSignedIn && gapi.client.getToken()) {
-      console.warn('Google Drive backup failed:', error.message);
-      setTimeout(() => {
-        showErrorMessage(`Drive sync failed: ${error.message}`);
-      }, 1000);
-    }
-  }
-}
-
-// Load service history (now uses Google Drive with user isolation)
-async function loadServiceHistory() {
-  return await loadServiceHistoryFromDrive();
-}
-
-// Get user-specific localStorage key
-function getUserStorageKey() {
-  if (currentUser) {
-    return `vehicleServiceHistory_${currentUser.id}`;
-  }
-  return 'vehicleServiceHistory'; // Fallback for anonymous users
-}
-
 function getNextDueKm(currentKm, interval) {
   if (interval === 0) return 0;
   return Math.ceil(currentKm / interval) * interval;
@@ -1472,42 +380,27 @@ function getLastServiceKm(itemName) {
   return Math.max(...services.map(service => service.odometer));
 }
 
-// Save service history (now uses Google Drive)
-async function saveServiceHistory() {
-  await saveServiceHistoryToDrive();
+// Load service history from localStorage
+function loadServiceHistory() {
+  const stored = localStorage.getItem('vehicleServiceHistory');
+  serviceHistory = stored ? JSON.parse(stored) : [];
+  return serviceHistory;
 }
 
-// Save individual service record (now uses Google Drive)
-async function saveServiceRecord(serviceRecord) {
-  try {
-    // Add to local array first
-    serviceHistory.push(serviceRecord);
-    console.log('Added service record to local array:', serviceRecord);
-    
-    // Save to localStorage and Google Drive
-    await saveServiceHistoryToDrive();
-    
-    showSuccessMessage('Service record saved successfully!');
-    return serviceRecord;
-  } catch (error) {
-    console.error('Failed to save service record:', error);
-    
-    // Even if Drive sync fails, the record is still saved locally
-    // So we should still show success for the local save
-    showSuccessMessage('Service record saved locally!');
-    
-    // Only show Drive error if user is signed in and expects sync
-    if (isSignedIn && gapi.client.getToken()) {
-      setTimeout(() => {
-        showErrorMessage('Google Drive sync failed, but data is saved locally.');
-      }, 2000);
-    }
-    
-    return serviceRecord;
-  }
+// Save service history to localStorage
+function saveServiceHistory() {
+  localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
 }
 
-async function logService(event) {
+// Save individual service record
+function saveServiceRecord(serviceRecord) {
+  serviceHistory.push(serviceRecord);
+  saveServiceHistory();
+  showSuccessMessage('Service record saved successfully!');
+  return serviceRecord;
+}
+
+function logService(event) {
   event.preventDefault();
   
   const item = document.getElementById('serviceItem').value;
@@ -1531,8 +424,6 @@ async function logService(event) {
     return;
   }
   
-  console.log('Creating service record:', { item, odometer, date, cost, notes });
-  
   const serviceRecord = {
     id: Date.now() + Math.random(), // Ensure unique ID
     item,
@@ -1544,11 +435,8 @@ async function logService(event) {
   };
   
   try {
-    // Show loading state
-    showLoadingState('Saving service record...');
-    
     // Save the service record
-    await saveServiceRecord(serviceRecord);
+    saveServiceRecord(serviceRecord);
     
     // Clear form after successful save
     clearForm();
@@ -1558,13 +446,9 @@ async function logService(event) {
       renderHistory();
     }
     
-    console.log('Service record saved successfully:', serviceRecord);
-    
   } catch (error) {
     console.error('Error in logService:', error);
     showErrorMessage('Failed to save service record. Please try again.');
-  } finally {
-    hideLoadingState();
   }
 }
 
@@ -1639,7 +523,7 @@ function renderHistory() {
   });
 }
 
-async function deleteService(serviceId) {
+function deleteService(serviceId) {
   if (!confirm('Are you sure you want to delete this service record?')) {
     return;
   }
@@ -1648,8 +532,8 @@ async function deleteService(serviceId) {
     // Remove from local array
     serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
     
-    // Save updated history to Google Drive
-    await saveServiceHistoryToDrive();
+    // Save updated history
+    saveServiceHistory();
     
     showSuccessMessage('Service record deleted successfully!');
     renderHistory();
@@ -1738,14 +622,6 @@ function checkMaintenance() {
   document.getElementById("welcomeState").classList.add("hidden");
 
   renderTable();
-  
-  // Auto-save service history after analysis
-  if (isSignedIn) {
-    setTimeout(async () => {
-      await saveServiceHistory();
-      console.log('Service history auto-saved after maintenance analysis');
-    }, 500);
-  }
 }
 
 function getLastServiceDate(itemName) {
@@ -1824,59 +700,7 @@ function filterItems(filter) {
   renderTable();
 }
 
-// Initialize filter button styles
-document.addEventListener('DOMContentLoaded', function() {
-  const activeBtn = document.querySelector('.filter-btn.active');
-  if (activeBtn) {
-    activeBtn.classList.add('bg-blue-600', 'text-white');
-    activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-100');
-  }
-  
-  document.querySelectorAll('.filter-btn:not(.active)').forEach(btn => {
-    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
-  });
-  
-  // Initialize Google Sign-In
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CONFIG.CLIENT_ID,
-    callback: handleCredentialResponse
-  });
-  
-  // Update the client ID in the HTML element with decoded value
-  const gIdOnload = document.getElementById('g_id_onload');
-  if (gIdOnload) {
-    gIdOnload.setAttribute('data-client_id', GOOGLE_CONFIG.CLIENT_ID);
-  }
-});
-
 // UI Feedback Functions
-function showLoadingState(message = 'Loading...') {
-  // Create or update loading overlay
-  let overlay = document.getElementById('loadingOverlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'loadingOverlay';
-    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    overlay.innerHTML = `
-      <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
-        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <span id="loadingMessage" class="text-gray-700 font-medium">${message}</span>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-  } else {
-    document.getElementById('loadingMessage').textContent = message;
-    overlay.classList.remove('hidden');
-  }
-}
-
-function hideLoadingState() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) {
-    overlay.classList.add('hidden');
-  }
-}
-
 function showSuccessMessage(message) {
   showToast(message, 'success');
 }
@@ -1918,85 +742,10 @@ function showToast(message, type = 'info') {
   }, 4000);
 }
 
-// Restore user session if available
-function restoreUserSession() {
-  try {
-    const userData = localStorage.getItem('google_user_data');
-    const signInTime = localStorage.getItem('google_signin_success');
-    
-    if (userData && signInTime) {
-      const timeSinceSignIn = Date.now() - parseInt(signInTime);
-      // Keep session for 7 days
-      if (timeSinceSignIn < 7 * 24 * 60 * 60 * 1000) {
-        currentUser = JSON.parse(userData);
-        isSignedIn = true;
-        
-        console.log('Restored user session for:', currentUser.name);
-        updateAuthUI();
-        
-        // Hide sign-in section
-        const signInSection = document.getElementById('signInSection');
-        if (signInSection) {
-          signInSection.style.display = 'none';
-        }
-        
-        // Check if we have a stored access token
-        const storedToken = localStorage.getItem('google_access_token');
-        const tokenExpiry = localStorage.getItem('google_token_expiry');
-        
-        if (storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
-          // Token is still valid, set it
-          gapi.client.setToken({
-            access_token: storedToken,
-            expires_in: Math.floor((parseInt(tokenExpiry) - Date.now()) / 1000)
-          });
-          updateDriveStatus(true, `${currentUser.name}'s session restored`);
-          console.log('Restored valid access token');
-          
-          // Load service history immediately when session is restored with valid token
-          setTimeout(async () => {
-            await loadServiceHistory();
-            console.log('Service history loaded after session restore');
-          }, 500);
-        } else {
-          // Token expired or not available, user will need to re-authorize for Drive
-          updateDriveStatus(false, 'Drive access expired - click to reconnect');
-          localStorage.removeItem('google_access_token');
-          localStorage.removeItem('google_token_expiry');
-          
-          // Still load local data when token is expired
-          setTimeout(async () => {
-            await loadServiceHistory();
-            console.log('Local service history loaded (token expired)');
-          }, 500);
-        }
-        
-        return true;
-      } else {
-        // Session expired
-        localStorage.removeItem('google_user_data');
-        localStorage.removeItem('google_signin_success');
-        localStorage.removeItem('google_access_token');
-        localStorage.removeItem('google_token_expiry');
-      }
-    }
-  } catch (error) {
-    console.error('Error restoring user session:', error);
-  }
-  
-  return false;
-}
-
 // Initialize form and event listeners
-document.addEventListener('DOMContentLoaded', async function() {
-  // Initialize Google APIs (includes One Tap setup)
-  loadGapiClient();
-  
-  // Try to restore user session first
-  const sessionRestored = restoreUserSession();
-  
-  // Load service history (from Google Drive or localStorage)
-  await loadServiceHistory();
+document.addEventListener('DOMContentLoaded', function() {
+  // Load service history from localStorage
+  loadServiceHistory();
   
   // Set default date to today
   document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
@@ -2025,24 +774,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.querySelectorAll('.filter-btn:not(.active)').forEach(btn => {
     btn.classList.add('text-gray-600', 'hover:bg-gray-100');
   });
-  
-  // Update the client ID in the HTML element with decoded value
-  const gIdOnload = document.getElementById('g_id_onload');
-  if (gIdOnload) {
-    gIdOnload.setAttribute('data-client_id', GOOGLE_CONFIG.CLIENT_ID);
-  }
-  
-  // Only show One Tap if session wasn't restored
-  if (!sessionRestored) {
-    const recentSignIn = localStorage.getItem('google_signin_success');
-    if (recentSignIn) {
-      const timeSinceSignIn = Date.now() - parseInt(recentSignIn);
-      // If signed in within last 7 days, show One Tap more aggressively
-      if (timeSinceSignIn < 7 * 24 * 60 * 60 * 1000) {
-        console.log('Recent sign-in detected, enabling One Tap');
-      }
-    }
-  }
 });
 
 // Allow Enter key to trigger check
@@ -2053,5 +784,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b3bffeb5a804c9',t:'MTc1OTkwNjcwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b3cd7fd228db1c',t:'MTc1OTkwNzI2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

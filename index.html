@@ -24,7 +24,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Complete Vehicle Maintenance Tracker 255
+      Complete Vehicle Maintenance Tracker 259
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -32,6 +32,32 @@
     <p class="text-sm text-gray-500 max-w-xl mx-auto mt-2">
       🔒 Multi-user support: Each Google account gets private, isolated maintenance data
     </p>
+    
+    <!-- Configuration Notice -->
+    <div id="configNotice" class="mt-4 max-w-4xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0">
+          <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-semibold text-blue-800 mb-1">🔧 Setup Required for Google Drive Sync</h3>
+          <p class="text-sm text-blue-700 mb-2">
+            To enable Google Drive backup and multi-device sync, you'll need to configure your own Google API credentials:
+          </p>
+          <div class="text-xs text-blue-600 space-y-1">
+            <p><strong>1.</strong> Go to <a href="https://console.cloud.google.com" target="_blank" class="underline">Google Cloud Console</a></p>
+            <p><strong>2.</strong> Create a project and enable Google Drive API</p>
+            <p><strong>3.</strong> Create OAuth 2.0 credentials and API key</p>
+            <p><strong>4.</strong> Replace the placeholder values in the code</p>
+          </div>
+          <p class="text-xs text-blue-600 mt-2">
+            <strong>✅ Current Status:</strong> All features work locally without Google setup!
+          </p>
+        </div>
+      </div>
+    </div>
     
     <!-- Google Authentication Status -->
     <div id="authStatus" class="mt-4 space-y-3">
@@ -385,8 +411,8 @@ let serviceHistory = [];
 
 // Google API Configuration
 const GOOGLE_CONFIG = {
-  CLIENT_ID: '601538858993-ms68h35ospft4ntb6u2tn7h7erojolvo.apps.googleusercontent.com',
-  API_KEY: 'AIzaSyDummy_Key_For_Demo_Purposes_Only',
+  CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+  API_KEY: 'YOUR_GOOGLE_API_KEY',
   DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
   SCOPES: 'https://www.googleapis.com/auth/drive.file',
   FILE_NAME: 'vehicle_maintenance_data.json'
@@ -400,6 +426,13 @@ let gDriveClient;
 
 // Google Authentication Functions
 function loadGapiClient() {
+  // Check if Google APIs are configured
+  if (!GOOGLE_CONFIG.API_KEY || GOOGLE_CONFIG.API_KEY.includes('YOUR_GOOGLE')) {
+    console.log('Google API not configured - using local storage only');
+    updateDriveStatus(false, 'Google API not configured - local storage only');
+    return;
+  }
+
   // 1. Load the 'client' module first
   gapi.load('client', async () => {
     try {
@@ -432,6 +465,13 @@ function loadGapiClient() {
 
 function initializeGoogleOneTap() {
   try {
+    // Check if we have valid credentials
+    if (!GOOGLE_CONFIG.CLIENT_ID || GOOGLE_CONFIG.CLIENT_ID.includes('YOUR_GOOGLE')) {
+      console.log('Google OAuth not configured - using local storage only');
+      updateDriveStatus(false, 'Google OAuth not configured - local storage only');
+      return;
+    }
+
     // Initialize Google Identity Services
     google.accounts.id.initialize({
       client_id: GOOGLE_CONFIG.CLIENT_ID,
@@ -2013,5 +2053,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b3bba745b904c9',t:'MTc1OTkwNjUzMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b3bffeb5a804c9',t:'MTc1OTkwNjcwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

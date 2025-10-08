@@ -24,7 +24,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Complete Vehicle Maintenance Tracker 237
+      Complete Vehicle Maintenance Tracker 247
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -396,27 +396,38 @@ let gapi;
 let tokenClient;
 let isSignedIn = false;
 let currentUser = null;
+let gDriveClient;
 
 // Google Authentication Functions
-async function initializeGoogleAPI() {
-  try {
-    await new Promise((resolve) => {
-      gapi.load('client', resolve);
-    });
-    
-    await gapi.client.init({
-      apiKey: GOOGLE_CONFIG.API_KEY,
-      discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
-    });
-    
-    // Initialize Google One Tap with Drive scope included
-    initializeGoogleOneTap();
-    
-    updateDriveStatus(true, 'Google Drive API ready');
-  } catch (error) {
-    console.error('Failed to initialize Google API:', error);
-    updateDriveStatus(false, 'Google Drive API failed to load');
-  }
+function loadGapiClient() {
+  // 1. Load the 'client' module first
+  gapi.load('client', async () => {
+    try {
+      // 2. Initialize the client (with your API Key and Discovery Doc)
+      await gapi.client.init({
+        apiKey: GOOGLE_CONFIG.API_KEY,
+        discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
+      });
+
+      // 3. Load the specific 'drive' library version (v3)
+      await gapi.client.load('drive', 'v3');
+      
+      // Success: gapi.client is now fully initialized and ready
+      console.log("Google Drive client loaded successfully.");
+
+      // Store the client for later use (optional but good practice)
+      gDriveClient = gapi.client; 
+      
+      // Initialize Google One Tap with Drive scope included
+      initializeGoogleOneTap();
+      
+      updateDriveStatus(true, 'Google Drive API ready');
+      
+    } catch (error) {
+      console.error("Error initializing Google Drive client:", error);
+      updateDriveStatus(false, 'Google Drive API failed to load');
+    }
+  });
 }
 
 function initializeGoogleOneTap() {
@@ -1939,7 +1950,7 @@ function restoreUserSession() {
 // Initialize form and event listeners
 document.addEventListener('DOMContentLoaded', async function() {
   // Initialize Google APIs (includes One Tap setup)
-  await initializeGoogleAPI();
+  loadGapiClient();
   
   // Try to restore user session first
   const sessionRestored = restoreUserSession();
@@ -2002,5 +2013,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b39f4516d3fee7',t:'MTc1OTkwNTM2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b3afc3532704c9',t:'MTc1OTkwNjA0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

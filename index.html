@@ -24,7 +24,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Complete Vehicle Maintenance Tracker 215
+      Complete Vehicle Maintenance Tracker 237
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -97,6 +97,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           Test Drive
+        </button>
+        <button id="debugButton" onclick="showDebugInfo()" class="hidden inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors">
+          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Debug Info
         </button>
       </div>
     </div>
@@ -751,6 +757,10 @@ function updateDriveStatus(isConnected, message = '') {
     if (testDriveButton) {
       testDriveButton.classList.remove('hidden');
     }
+    const debugButton = document.getElementById('debugButton');
+    if (debugButton) {
+      debugButton.classList.remove('hidden');
+    }
   } else {
     statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 cursor-pointer hover:bg-yellow-200';
     statusElement.innerHTML = `
@@ -763,6 +773,10 @@ function updateDriveStatus(isConnected, message = '') {
     }
     if (testDriveButton) {
       testDriveButton.classList.add('hidden');
+    }
+    const debugButton = document.getElementById('debugButton');
+    if (debugButton) {
+      debugButton.classList.add('hidden');
     }
   }
 }
@@ -778,6 +792,192 @@ function handleDriveStatusClick() {
   } else if (isSignedIn && gapi.client.getToken()) {
     // User is signed in and has token - trigger manual sync
     manualSync();
+  }
+}
+
+// Show comprehensive debug information
+function showDebugInfo() {
+  const token = gapi.client.getToken();
+  const debugInfo = {
+    'Authentication': {
+      'Signed In': isSignedIn,
+      'Current User': currentUser ? `${currentUser.name} (${currentUser.email})` : 'None',
+      'User ID': currentUser?.id || 'None'
+    },
+    'Google Drive Access': {
+      'Token Available': !!token,
+      'Access Token': token?.access_token ? `${token.access_token.substring(0, 20)}...` : 'Missing',
+      'Token Expires': token?.expires_in ? `${token.expires_in} seconds` : 'Unknown',
+      'Stored Token': localStorage.getItem('google_access_token') ? 'Present' : 'Missing',
+      'Token Expiry': localStorage.getItem('google_token_expiry') ? new Date(parseInt(localStorage.getItem('google_token_expiry'))).toLocaleString() : 'None'
+    },
+    'Service History': {
+      'Records Count': serviceHistory.length,
+      'Storage Key': getUserStorageKey(),
+      'Local Storage Size': localStorage.getItem(getUserStorageKey())?.length || 0,
+      'Sample Record': serviceHistory.length > 0 ? serviceHistory[0] : 'None'
+    },
+    'Google API Status': {
+      'GAPI Loaded': typeof gapi !== 'undefined',
+      'Client Initialized': !!gapi?.client,
+      'Drive API Available': !!gapi?.client?.drive,
+      'Token Client': !!tokenClient
+    }
+  };
+  
+  // Create debug modal
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-96 overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">🔍 Debug Information</h2>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="space-y-4">
+          ${Object.entries(debugInfo).map(([category, data]) => `
+            <div class="border rounded-lg p-4">
+              <h3 class="font-semibold text-lg text-blue-600 mb-2">${category}</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                ${Object.entries(data).map(([key, value]) => `
+                  <div class="flex justify-between">
+                    <span class="font-medium text-gray-600">${key}:</span>
+                    <span class="text-gray-800 font-mono text-xs">${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="mt-6 flex space-x-3">
+          <button onclick="copyDebugInfo()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            📋 Copy to Clipboard
+          </button>
+          <button onclick="testFullDriveFlow()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            🧪 Test Full Drive Flow
+          </button>
+          <button onclick="this.closest('.fixed').remove()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Store debug info globally for copying
+  window.debugInfo = debugInfo;
+}
+
+// Copy debug info to clipboard
+function copyDebugInfo() {
+  const debugText = JSON.stringify(window.debugInfo, null, 2);
+  navigator.clipboard.writeText(debugText).then(() => {
+    showSuccessMessage('Debug info copied to clipboard!');
+  }).catch(() => {
+    showErrorMessage('Failed to copy debug info');
+  });
+}
+
+// Test full Drive flow with detailed logging
+async function testFullDriveFlow() {
+  console.log('=== FULL DRIVE FLOW TEST ===');
+  
+  if (!isSignedIn) {
+    showErrorMessage('Please sign in with Google first');
+    return;
+  }
+  
+  const token = gapi.client.getToken();
+  if (!token || !token.access_token) {
+    showErrorMessage('No access token. Please reconnect to Google Drive.');
+    return;
+  }
+  
+  try {
+    showLoadingState('Testing complete Drive flow...');
+    
+    // Step 1: Test Drive API access
+    console.log('Step 1: Testing Drive API access...');
+    const aboutResponse = await gapi.client.drive.about.get({
+      fields: 'user,storageQuota'
+    });
+    console.log('✓ Drive API accessible:', aboutResponse.result.user.displayName);
+    
+    // Step 2: Test folder creation/access
+    console.log('Step 2: Testing folder access...');
+    const folderId = await findOrCreateVmaintFolder();
+    console.log('✓ Folder accessible:', folderId);
+    
+    // Step 3: Test file creation/access
+    console.log('Step 3: Testing file access...');
+    const fileId = await findOrCreateDataFile();
+    console.log('✓ File accessible:', fileId);
+    
+    // Step 4: Test file read
+    console.log('Step 4: Testing file read...');
+    const readResponse = await gapi.client.drive.files.get({
+      fileId: fileId,
+      alt: 'media'
+    });
+    console.log('✓ File readable, size:', readResponse.body.length);
+    
+    // Step 5: Test file write
+    console.log('Step 5: Testing file write...');
+    const testData = {
+      services: serviceHistory,
+      testWrite: new Date().toISOString(),
+      userId: currentUser.id
+    };
+    
+    const boundary = '-------314159265358979323846';
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const close_delim = "\r\n--" + boundary + "--";
+    
+    const metadata = {
+      'name': `maintenance_${currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}.json`
+    };
+    
+    const multipartRequestBody =
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: application/json\r\n\r\n' +
+      JSON.stringify(testData, null, 2) +
+      close_delim;
+    
+    const writeResponse = await gapi.client.request({
+      'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+      'method': 'PATCH',
+      'params': {'uploadType': 'multipart'},
+      'headers': {
+        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+      },
+      'body': multipartRequestBody
+    });
+    
+    console.log('✓ File writable, status:', writeResponse.status);
+    
+    if (writeResponse.status === 200) {
+      showSuccessMessage('🎉 All Drive tests passed! Google Drive is working correctly.');
+      console.log('=== ALL TESTS PASSED ===');
+    } else {
+      throw new Error(`Write test failed with status: ${writeResponse.status}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Drive flow test failed:', error);
+    console.error('Error details:', error.message, error.stack);
+    showErrorMessage(`Drive flow test failed: ${error.message}`);
+  } finally {
+    hideLoadingState();
   }
 }
 
@@ -1802,5 +2002,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b37f8c63d8db1c',t:'MTc1OTkwNDA2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b39f4516d3fee7',t:'MTc1OTkwNTM2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

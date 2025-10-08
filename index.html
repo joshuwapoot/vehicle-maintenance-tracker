@@ -25,7 +25,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Vehicle Maintenance Tracker v34
+      Vehicle Maintenance Tracker v35
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -304,13 +304,20 @@ const firebaseConfig = {
   storageBucket: "vehicle-maintenance-474502.firebasestorage.app",
   messagingSenderId: "601538858993",
   appId: "1:601538858993:web:ffe17c13afd579dc6abe50",
-  measurementId: "G-BJD27GXM5M"
+  measurementId: "G-BJD27GXM5M",
+  databaseURL: "/databases/(default)/documents"
 };
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// Configure Firestore to use the specified database location
+db.settings({
+  host: 'firestore.googleapis.com',
+  ssl: true
+});
 
 // Global variables
 let currentUserId = null;
@@ -981,5 +988,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b4731f10fbdb1c',t:'MTc1OTkxNDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b47deff732db1c',t:'MTc1OTkxNDQ4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Vehicle Maintenance Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen font-sans">
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-4 shadow-lg">
+      <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+      </svg>
+    </div>
+    <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+      Complete Vehicle Maintenance Tracker
+    </h1>
+    <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+      Comprehensive maintenance scheduling for optimal vehicle performance and safety
+    </p>
+    <p class="text-sm text-gray-500 max-w-xl mx-auto mt-2">
+      🔒 Multi-user support: Each Google account gets private, isolated maintenance data
+    </p>
+    
+    <!-- Google Authentication Status -->
+    <div id="authStatus" class="mt-4 space-y-3">
+      <div id="signInSection" class="flex flex-col items-center space-y-3">
+        <!-- Google One Tap Configuration -->
+        <div id="g_id_onload"
+             data-client_id="601538858993-ms68h35ospft4ntb6u2tn7h7erojolvo.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="true"
+             data-auto_select="true"
+             data-cancel_on_tap_outside="false"
+             data-prompt_parent_id="g_id_onload"
+             data-state_cookie_domain="single_host_origin">
+        </div>
+        
+        <!-- One Tap Prompt Container -->
+        <div id="oneTapContainer" class="w-full flex justify-center"></div>
+        
+        <!-- Standard Sign-In Button (fallback) -->
+        <div id="standardSignIn" class="flex flex-col items-center space-y-3">
+          <div class="g_id_signin" 
+               data-type="standard" 
+               data-shape="rectangular" 
+               data-theme="outline" 
+               data-text="signin_with" 
+               data-size="large" 
+               data-logo_alignment="left">
+          </div>
+          <p class="text-sm text-gray-600 text-center max-w-md">
+            Sign in with Google to sync your maintenance records across devices and backup to Google Drive
+          </p>
+        </div>
+      </div>
+      
+      <div id="signedInSection" class="hidden flex flex-col items-center space-y-2">
+        <div class="flex items-center space-x-3 bg-green-50 px-4 py-2 rounded-lg">
+          <img id="userPhoto" class="w-8 h-8 rounded-full" src="" alt="User">
+          <div>
+            <p id="userName" class="font-medium text-green-800"></p>
+            <p class="text-sm text-green-600">Signed in • Data synced to Google Drive</p>
+          </div>
+        </div>
+        <button onclick="signOut()" class="text-sm text-gray-500 hover:text-gray-700 underline">
+          Sign Out
+        </button>
+      </div>
+      
+      <div id="driveStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+        <div class="w-2 h-2 rounded-full mr-2 bg-blue-500"></div>
+        <span>Ready to sync with Google Drive</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Odometer Input Card -->
+  <div class="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
+    <div class="flex flex-col lg:flex-row items-center justify-center gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+        </div>
+        <div>
+          <label for="odo" class="text-xl font-bold text-gray-800 block">Current Odometer Reading</label>
+          <p class="text-gray-500">Enter your vehicle's current mileage</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <input type="number" id="odo" placeholder="e.g. 12000" 
+                 class="px-6 py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl w-56 text-center font-mono shadow-sm">
+          <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-semibold">km</span>
+        </div>
+        <button onclick="checkMaintenance()" 
+                class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+          Analyze Maintenance
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Dashboard -->
+  <div id="summaryDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Critical</p>
+          <p id="criticalCount" class="text-3xl font-bold text-red-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">Items overdue</p>
+        </div>
+        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+          <span class="text-2xl">🚨</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Due Soon</p>
+          <p id="soonCount" class="text-3xl font-bold text-yellow-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">Within 1000km</p>
+        </div>
+        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+          <span class="text-2xl">⏰</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Good</p>
+          <p id="goodCount" class="text-3xl font-bold text-green-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">No action needed</p>
+        </div>
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+          <span class="text-2xl">✅</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pre-Drive</p>
+          <p id="preDriveCount" class="text-3xl font-bold text-blue-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">Check before driving</p>
+        </div>
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+          <span class="text-2xl">🔍</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div id="filterTabs" class="bg-white rounded-xl shadow-lg p-2 mb-6 hidden">
+    <div class="flex flex-wrap gap-2">
+      <button onclick="filterItems('all')" class="filter-btn active px-4 py-2 rounded-lg font-semibold transition-all duration-200">
+        All Items
+      </button>
+      <button onclick="filterItems('critical')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
+        Critical
+      </button>
+      <button onclick="filterItems('soon')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
+        Due Soon
+      </button>
+      <button onclick="filterItems('good')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
+        Good
+      </button>
+      <button onclick="filterItems('predrive')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
+        Pre-Drive
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div id="navigationTabs" class="bg-white rounded-xl shadow-lg p-2 mb-6 hidden">
+    <div class="flex flex-wrap gap-2">
+      <button onclick="showTab('schedule')" class="nav-tab active px-6 py-3 rounded-lg font-bold transition-all duration-200">
+        📋 Current Schedule
+      </button>
+      <button onclick="showTab('history')" class="nav-tab px-6 py-3 rounded-lg font-bold transition-all duration-200">
+        📚 Service History
+      </button>
+      <button onclick="showTab('log')" class="nav-tab px-6 py-3 rounded-lg font-bold transition-all duration-200">
+        ✏️ Log Service
+      </button>
+    </div>
+  </div>
+
+  <!-- Log Service Form -->
+  <div id="logServiceCard" class="bg-white rounded-xl shadow-lg p-8 mb-6 hidden">
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Log Completed Service</h2>
+      <p class="text-gray-600">Record maintenance work that has been completed</p>
+    </div>
+    
+    <form id="serviceForm" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Service Item</label>
+          <select id="serviceItem" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+            <option value="">Select maintenance item...</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Odometer Reading (km)</label>
+          <input type="number" id="serviceOdometer" placeholder="e.g. 15000" 
+                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Service Date</label>
+          <input type="date" id="serviceDate" 
+                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Cost (optional)</label>
+          <input type="number" id="serviceCost" placeholder="e.g. 150" step="0.01"
+                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none">
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Notes (optional)</label>
+        <textarea id="serviceNotes" rows="3" placeholder="Additional details about the service..."
+                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none resize-none"></textarea>
+      </div>
+      
+      <div class="flex gap-4">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200">
+          💾 Save Service Record
+        </button>
+        <button type="button" onclick="clearForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200">
+          🗑️ Clear Form
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Service History -->
+  <div id="historyCard" class="bg-white rounded-xl shadow-lg overflow-hidden hidden">
+    <div class="px-8 py-6 bg-gradient-to-r from-green-50 to-blue-50 border-b">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800">Service History</h2>
+          <p class="text-gray-600 mt-1">Complete record of all maintenance performed</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-600">Total Services</p>
+          <p id="totalServices" class="text-2xl font-bold text-blue-600">0</p>
+        </div>
+      </div>
+    </div>
+    
+    <div id="historyContent" class="p-8">
+      <div id="historyEmpty" class="text-center py-12">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-3xl">📚</span>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-600 mb-2">No Service History Yet</h3>
+        <p class="text-gray-500">Start logging your maintenance to build a comprehensive service history</p>
+      </div>
+      
+      <div id="historyList" class="space-y-4 hidden">
+        <!-- Service history items will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance Table -->
+  <div id="maintenanceCard" class="bg-white rounded-xl shadow-lg overflow-hidden hidden">
+    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-blue-50 border-b">
+      <h2 class="text-2xl font-bold text-gray-800">Detailed Maintenance Schedule</h2>
+      <p class="text-gray-600 mt-1">Complete overview of all maintenance requirements</p>
+    </div>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Component</th>
+            <th class="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Required Action</th>
+            <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">Service Interval</th>
+            <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">Next Service</th>
+            <th class="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase tracking-wider">Priority</th>
+          </tr>
+        </thead>
+        <tbody id="maintenanceTableBody" class="divide-y divide-gray-200">
+          <!-- Maintenance items will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Welcome State -->
+  <div id="welcomeState" class="text-center py-16">
+    <div class="w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+      <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+      </svg>
+    </div>
+    <h3 class="text-3xl font-bold text-gray-700 mb-4">Ready for Vehicle Analysis</h3>
+    <p class="text-xl text-gray-500 max-w-md mx-auto">Enter your current odometer reading to get a comprehensive maintenance report with priority recommendations</p>
+  </div>
+</div>
+
+<script>
+const maintenanceItems = [
+  { item: "Battery", action: "Charge", interval: 4000, category: "electrical" },
+  { item: "Brake Fluid", action: "Replace", interval: 20000, category: "brake" },
+  { item: "Lubricating Oil", action: "Replace", interval: 2000, category: "engine" },
+  { item: "Lubricating Oil Filter", action: "Replace", interval: 2000, category: "engine" },
+  { item: "Gear Oil", action: "Replace", interval: 6000, category: "transmission" },
+  { item: "Crankcase Breather Pipe", action: "Replace", interval: 10000, category: "engine" },
+  { item: "Engine Fine Filter", action: "Replace", interval: 12000, category: "engine" },
+  { item: "Fuel Line", action: "Inspect", interval: 2000, category: "fuel" },
+  { item: "Fuel Quantity", action: "Inspect", interval: 0, category: "fuel" },
+  { item: "Throttle Operation", action: "Inspect", interval: 2000, category: "engine" },
+  { item: "Fuel Evaporation Control System", action: "Inspect", interval: 2000, category: "fuel" },
+  { item: "Fuel Tank & Charcoal Canister", action: "Inspect", interval: 2000, category: "fuel" },
+  { item: "Drive Belt", action: "Inspect", interval: 4000, category: "engine" },
+  { item: "Belt Chamber / Belt Pulley", action: "Inspect", interval: 12000, category: "engine" },
+  { item: "Valve Clearance", action: "Inspect", interval: 12000, category: "engine" },
+  { item: "Spark Plug", action: "Inspect/Replace", interval: 12000, category: "engine" },
+  { item: "Brake Pad Wear", action: "Inspect", interval: 6000, category: "brake" },
+  { item: "Coolant", action: "Replace", interval: 10000, category: "cooling" },
+  { item: "Engine Idling", action: "Inspect", interval: 6000, category: "engine" },
+  { item: "Clutch Shoe Block", action: "Inspect", interval: 6000, category: "transmission" },
+  { item: "Brake System", action: "Inspect", interval: 6000, category: "brake" },
+  { item: "Headlamp Beam", action: "Inspect", interval: 6000, category: "electrical" },
+  { item: "Lamp and Horn", action: "Inspect", interval: 6000, category: "electrical" },
+  { item: "Side/Main Bracket", action: "Inspect", interval: 6000, category: "chassis" },
+  { item: "Suspension", action: "Inspect", interval: 6000, category: "chassis" },
+  { item: "Steering Column Bearing", action: "Inspect", interval: 6000, category: "steering" },
+  { item: "Wheels & Tires", action: "Inspect", interval: 6000, category: "chassis" },
+  { item: "Nuts, Bolts, Fasteners", action: "Inspect", interval: 6000, category: "general" }
+];
+
+let currentFilter = 'all';
+let maintenanceData = [];
+let currentTab = 'schedule';
+let serviceHistory = [];
+
+// Google API Configuration
+const GOOGLE_CONFIG = {
+  CLIENT_ID: '601538858993-ms68h35ospft4ntb6u2tn7h7erojolvo.apps.googleusercontent.com',
+  API_KEY: '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',
+  DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+  SCOPES: 'https://www.googleapis.com/auth/drive.file',
+  FILE_NAME: 'vehicle_maintenance_data.json'
+};
+
+let gapi;
+let tokenClient;
+let isSignedIn = false;
+let currentUser = null;
+
+// Google Authentication Functions
+async function initializeGoogleAPI() {
+  try {
+    await new Promise((resolve) => {
+      gapi.load('client', resolve);
+    });
+    
+    await gapi.client.init({
+      apiKey: GOOGLE_CONFIG.API_KEY,
+      discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
+    });
+    
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CONFIG.CLIENT_ID,
+      scope: GOOGLE_CONFIG.SCOPES,
+      callback: (response) => {
+        if (response.error) {
+          console.error('Token error:', response.error);
+          updateDriveStatus(false, 'Google Drive connection failed');
+          return;
+        }
+        updateDriveStatus(true, 'Connected to Google Drive');
+        loadServiceHistoryFromDrive();
+      },
+    });
+    
+    // Initialize Google One Tap
+    initializeGoogleOneTap();
+    
+    updateDriveStatus(true, 'Google Drive API ready');
+  } catch (error) {
+    console.error('Failed to initialize Google API:', error);
+    updateDriveStatus(false, 'Google Drive API failed to load');
+  }
+}
+
+function initializeGoogleOneTap() {
+  try {
+    // Initialize Google Identity Services
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CONFIG.CLIENT_ID,
+      callback: handleCredentialResponse,
+      auto_select: true,
+      cancel_on_tap_outside: false,
+      context: 'signin'
+    });
+
+    // Check if user is already signed in or has previous session
+    const hasRecentSession = localStorage.getItem('google_signin_recent');
+    const shouldShowOneTap = !isSignedIn && !hasRecentSession;
+
+    if (shouldShowOneTap) {
+      // Show One Tap prompt after a short delay
+      setTimeout(() => {
+        google.accounts.id.prompt((notification) => {
+          handleOneTapNotification(notification);
+        });
+      }, 1000);
+    }
+
+    // Render the standard sign-in button as fallback
+    google.accounts.id.renderButton(
+      document.querySelector('.g_id_signin'),
+      {
+        theme: 'outline',
+        size: 'large',
+        type: 'standard',
+        shape: 'rectangular',
+        text: 'signin_with',
+        logo_alignment: 'left'
+      }
+    );
+
+  } catch (error) {
+    console.error('Failed to initialize Google One Tap:', error);
+  }
+}
+
+function handleOneTapNotification(notification) {
+  console.log('One Tap notification:', notification);
+  
+  if (notification.isNotDisplayed()) {
+    console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+    
+    // Show standard sign-in button if One Tap fails
+    const standardSignIn = document.getElementById('standardSignIn');
+    if (standardSignIn) {
+      standardSignIn.style.display = 'flex';
+    }
+  } else if (notification.isSkippedMoment()) {
+    console.log('One Tap skipped:', notification.getSkippedReason());
+    
+    // Mark that user has seen One Tap recently
+    localStorage.setItem('google_signin_recent', Date.now().toString());
+    
+    // Show standard sign-in button
+    const standardSignIn = document.getElementById('standardSignIn');
+    if (standardSignIn) {
+      standardSignIn.style.display = 'flex';
+    }
+  } else if (notification.isDismissedMoment()) {
+    console.log('One Tap dismissed:', notification.getDismissedReason());
+    
+    // Mark that user dismissed One Tap
+    localStorage.setItem('google_signin_dismissed', Date.now().toString());
+    
+    // Show standard sign-in button
+    const standardSignIn = document.getElementById('standardSignIn');
+    if (standardSignIn) {
+      standardSignIn.style.display = 'flex';
+    }
+  }
+}
+
+function handleCredentialResponse(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    currentUser = {
+      id: payload.sub,
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture
+    };
+    
+    isSignedIn = true;
+    
+    // Store successful sign-in timestamp
+    localStorage.setItem('google_signin_success', Date.now().toString());
+    localStorage.removeItem('google_signin_recent');
+    localStorage.removeItem('google_signin_dismissed');
+    
+    updateAuthUI();
+    
+    // Hide One Tap and standard sign-in elements
+    const signInSection = document.getElementById('signInSection');
+    if (signInSection) {
+      signInSection.style.display = 'none';
+    }
+    
+    // Request access token for Drive API
+    tokenClient.requestAccessToken();
+    
+    // Show welcome message with user's first name
+    const firstName = currentUser.name.split(' ')[0];
+    showSuccessMessage(`Welcome back, ${firstName}! 🎉`);
+    
+    // Add subtle animation to signed-in section
+    const signedInSection = document.getElementById('signedInSection');
+    if (signedInSection) {
+      signedInSection.classList.add('animate-pulse');
+      setTimeout(() => {
+        signedInSection.classList.remove('animate-pulse');
+      }, 2000);
+    }
+    
+  } catch (error) {
+    console.error('Error handling credential response:', error);
+    showErrorMessage('Failed to sign in with Google');
+  }
+}
+
+function updateAuthUI() {
+  const signInSection = document.getElementById('signInSection');
+  const signedInSection = document.getElementById('signedInSection');
+  const userName = document.getElementById('userName');
+  const userPhoto = document.getElementById('userPhoto');
+  
+  if (isSignedIn && currentUser) {
+    signInSection.classList.add('hidden');
+    signedInSection.classList.remove('hidden');
+    userName.textContent = currentUser.name;
+    userPhoto.src = currentUser.picture;
+    updateDriveStatus(true, 'Connected to Google Drive');
+  } else {
+    signInSection.classList.remove('hidden');
+    signedInSection.classList.add('hidden');
+    updateDriveStatus(false, 'Sign in to sync with Google Drive');
+  }
+}
+
+async function signOut() {
+  // Clear current user data
+  const previousUser = currentUser ? currentUser.name.split(' ')[0] : 'User';
+  
+  isSignedIn = false;
+  currentUser = null;
+  serviceHistory = []; // Clear current service history
+  
+  // Clear sign-in related localStorage
+  localStorage.removeItem('google_signin_success');
+  localStorage.removeItem('google_signin_recent');
+  localStorage.removeItem('google_signin_dismissed');
+  
+  // Reset UI to welcome state
+  document.getElementById("summaryDashboard").classList.add("hidden");
+  document.getElementById("navigationTabs").classList.add("hidden");
+  document.getElementById("filterTabs").classList.add("hidden");
+  document.getElementById("maintenanceCard").classList.add("hidden");
+  document.getElementById("historyCard").classList.add("hidden");
+  document.getElementById("logServiceCard").classList.add("hidden");
+  document.getElementById("welcomeState").classList.remove("hidden");
+  
+  // Clear odometer input
+  document.getElementById("odo").value = '';
+  
+  // Show sign-in section again
+  const signInSection = document.getElementById('signInSection');
+  if (signInSection) {
+    signInSection.style.display = 'flex';
+  }
+  
+  // Disable auto-select and revoke session
+  google.accounts.id.disableAutoSelect();
+  
+  // Revoke the token if available
+  if (gapi.client.getToken()) {
+    google.accounts.oauth2.revoke(gapi.client.getToken().access_token);
+  }
+  
+  updateAuthUI();
+  showSuccessMessage(`${previousUser} signed out successfully 👋`);
+  
+  // Re-initialize One Tap for next user (after a delay)
+  setTimeout(() => {
+    initializeGoogleOneTap();
+  }, 2000);
+}
+
+// Google Drive status functions
+function updateDriveStatus(isConnected, message = '') {
+  const statusElement = document.getElementById('driveStatus');
+  
+  if (isConnected) {
+    statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+    statusElement.innerHTML = `
+      <div class="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
+      <span>${message || 'Google Drive connected'}</span>
+    `;
+  } else {
+    statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800';
+    statusElement.innerHTML = `
+      <div class="w-2 h-2 rounded-full mr-2 bg-yellow-500"></div>
+      <span>${message || 'Google Drive offline'}</span>
+    `;
+  }
+}
+
+// Google Drive API Functions
+async function findOrCreateDataFile() {
+  try {
+    if (!currentUser) {
+      throw new Error('No user signed in');
+    }
+    
+    // Create user-specific filename
+    const userFileName = `vehicle_maintenance_${currentUser.id}.json`;
+    
+    // Search for existing file
+    const response = await gapi.client.drive.files.list({
+      q: `name='${userFileName}' and trashed=false`,
+      spaces: 'drive'
+    });
+    
+    if (response.result.files.length > 0) {
+      return response.result.files[0].id;
+    }
+    
+    // Create new file if not found
+    const fileMetadata = {
+      name: userFileName,
+      parents: ['appDataFolder'] // Store in app-specific folder
+    };
+    
+    const initialData = {
+      services: [],
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      createdAt: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const createResponse = await gapi.client.drive.files.create({
+      resource: fileMetadata,
+      media: {
+        mimeType: 'application/json',
+        body: JSON.stringify(initialData)
+      }
+    });
+    
+    return createResponse.result.id;
+  } catch (error) {
+    console.error('Error finding/creating data file:', error);
+    throw error;
+  }
+}
+
+async function loadServiceHistoryFromDrive() {
+  const storageKey = getUserStorageKey();
+  
+  if (!isSignedIn) {
+    // Fallback to user-specific localStorage if not signed in
+    serviceHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    return serviceHistory;
+  }
+  
+  try {
+    showLoadingState('Loading your maintenance data...');
+    
+    const fileId = await findOrCreateDataFile();
+    const response = await gapi.client.drive.files.get({
+      fileId: fileId,
+      alt: 'media'
+    });
+    
+    const data = JSON.parse(response.body);
+    
+    // Verify data belongs to current user
+    if (data.userId && data.userId !== currentUser.id) {
+      console.warn('Data file user mismatch, creating new file');
+      throw new Error('User data mismatch');
+    }
+    
+    serviceHistory = data.services || [];
+    
+    // Also save to user-specific localStorage as backup
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+    
+    updateDriveStatus(true, `${currentUser.name}'s data loaded from Google Drive`);
+    hideLoadingState();
+    return serviceHistory;
+  } catch (error) {
+    console.error('Failed to load from Google Drive:', error);
+    // Fallback to user-specific localStorage
+    serviceHistory = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    updateDriveStatus(false, 'Using local data - Drive sync failed');
+    hideLoadingState();
+    return serviceHistory;
+  }
+}
+
+async function saveServiceHistoryToDrive() {
+  const storageKey = getUserStorageKey();
+  
+  // Always save to user-specific localStorage as backup
+  localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+  
+  if (!isSignedIn) {
+    return; // Skip Drive sync if not signed in
+  }
+  
+  try {
+    showLoadingState('Syncing your data to Google Drive...');
+    
+    const fileId = await findOrCreateDataFile();
+    const dataToSave = {
+      services: serviceHistory,
+      userId: currentUser.id,
+      userEmail: currentUser.email,
+      userName: currentUser.name,
+      lastUpdated: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    await gapi.client.request({
+      path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+      method: 'PATCH',
+      params: {
+        uploadType: 'media'
+      },
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dataToSave)
+    });
+    
+    updateDriveStatus(true, `${currentUser.name}'s data synced to Google Drive`);
+    hideLoadingState();
+  } catch (error) {
+    console.error('Failed to save to Google Drive:', error);
+    updateDriveStatus(false, 'Local save only - Drive sync failed');
+    hideLoadingState();
+    showErrorMessage('Data saved locally. Google Drive sync failed.');
+  }
+}
+
+// Load service history (now uses Google Drive with user isolation)
+async function loadServiceHistory() {
+  return await loadServiceHistoryFromDrive();
+}
+
+// Get user-specific localStorage key
+function getUserStorageKey() {
+  if (currentUser) {
+    return `vehicleServiceHistory_${currentUser.id}`;
+  }
+  return 'vehicleServiceHistory'; // Fallback for anonymous users
+}
+
+function getNextDueKm(currentKm, interval) {
+  if (interval === 0) return 0;
+  return Math.ceil(currentKm / interval) * interval;
+}
+
+function getMaintenanceStatus(currentKm, interval, lastServiceKm = 0) {
+  if (interval === 0) {
+    return { status: 'predrive', label: 'Pre-Drive Check', class: 'bg-blue-100 text-blue-800', priority: 3 };
+  }
+  
+  // Calculate next due based on actual last service
+  const nextDue = lastServiceKm + interval;
+  const kmUntilDue = nextDue - currentKm;
+  
+  if (kmUntilDue <= 0) {
+    return { status: 'critical', label: 'Overdue', class: 'bg-red-100 text-red-800', priority: 1 };
+  } else if (kmUntilDue <= 1000) {
+    return { status: 'soon', label: 'Due Soon', class: 'bg-yellow-100 text-yellow-800', priority: 2 };
+  } else {
+    return { status: 'good', label: 'Good', class: 'bg-green-100 text-green-800', priority: 4 };
+  }
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  
+  // Update active tab
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.classList.remove('active', 'bg-blue-600', 'text-white');
+    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+  });
+  
+  event.target.classList.add('active', 'bg-blue-600', 'text-white');
+  event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  
+  // Show/hide content
+  document.getElementById('maintenanceCard').classList.add('hidden');
+  document.getElementById('historyCard').classList.add('hidden');
+  document.getElementById('logServiceCard').classList.add('hidden');
+  document.getElementById('filterTabs').classList.add('hidden');
+  
+  if (tab === 'schedule') {
+    document.getElementById('maintenanceCard').classList.remove('hidden');
+    document.getElementById('filterTabs').classList.remove('hidden');
+  } else if (tab === 'history') {
+    document.getElementById('historyCard').classList.remove('hidden');
+    renderHistory();
+  } else if (tab === 'log') {
+    document.getElementById('logServiceCard').classList.remove('hidden');
+    populateServiceItems();
+  }
+}
+
+function getLastServiceKm(itemName) {
+  const services = serviceHistory.filter(service => service.item === itemName);
+  if (services.length === 0) return 0;
+  return Math.max(...services.map(service => service.odometer));
+}
+
+// Save service history (now uses Google Drive)
+async function saveServiceHistory() {
+  await saveServiceHistoryToDrive();
+}
+
+// Save individual service record (now uses Google Drive)
+async function saveServiceRecord(serviceRecord) {
+  try {
+    // Add to local array
+    serviceHistory.push(serviceRecord);
+    
+    // Save to Google Drive
+    await saveServiceHistoryToDrive();
+    
+    showSuccessMessage('Service record saved successfully!');
+    return serviceRecord;
+  } catch (error) {
+    console.error('Failed to save service record:', error);
+    showErrorMessage('Failed to save service record.');
+    return serviceRecord;
+  }
+}
+
+async function logService(event) {
+  event.preventDefault();
+  
+  const item = document.getElementById('serviceItem').value;
+  const odometer = parseInt(document.getElementById('serviceOdometer').value);
+  const date = document.getElementById('serviceDate').value;
+  const cost = parseFloat(document.getElementById('serviceCost').value) || 0;
+  const notes = document.getElementById('serviceNotes').value;
+  
+  if (!item || !odometer || !date) {
+    showErrorMessage('Please fill in all required fields');
+    return;
+  }
+  
+  const serviceRecord = {
+    id: Date.now(),
+    item,
+    odometer,
+    date,
+    cost,
+    notes,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Save to server (with fallback to local storage)
+  await saveServiceRecord(serviceRecord);
+  
+  // Clear form
+  clearForm();
+  
+  // Refresh current view if needed
+  if (currentTab === 'history') {
+    renderHistory();
+  }
+}
+
+function clearForm() {
+  document.getElementById('serviceForm').reset();
+  document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
+}
+
+function populateServiceItems() {
+  const select = document.getElementById('serviceItem');
+  select.innerHTML = '<option value="">Select maintenance item...</option>';
+  
+  maintenanceItems.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.item;
+    option.textContent = item.item;
+    select.appendChild(option);
+  });
+}
+
+function renderHistory() {
+  const historyList = document.getElementById('historyList');
+  const historyEmpty = document.getElementById('historyEmpty');
+  const totalServices = document.getElementById('totalServices');
+  
+  totalServices.textContent = serviceHistory.length;
+  
+  if (serviceHistory.length === 0) {
+    historyEmpty.classList.remove('hidden');
+    historyList.classList.add('hidden');
+    return;
+  }
+  
+  historyEmpty.classList.add('hidden');
+  historyList.classList.remove('hidden');
+  
+  // Sort by date (newest first)
+  const sortedHistory = [...serviceHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  historyList.innerHTML = '';
+  
+  sortedHistory.forEach(service => {
+    const serviceCard = document.createElement('div');
+    serviceCard.className = 'bg-gray-50 rounded-lg p-6 border-l-4 border-blue-500';
+    
+    const categoryIcon = getCategoryIcon(maintenanceItems.find(item => item.item === service.item)?.category || 'general');
+    const costDisplay = service.cost > 0 ? `<span class="text-green-600 font-semibold">$${service.cost.toFixed(2)}</span>` : '<span class="text-gray-400">No cost recorded</span>';
+    
+    serviceCard.innerHTML = `
+      <div class="flex justify-between items-start mb-3">
+        <div class="flex items-center">
+          <span class="text-2xl mr-3">${categoryIcon}</span>
+          <div>
+            <h3 class="font-bold text-gray-800">${service.item}</h3>
+            <p class="text-sm text-gray-600">${new Date(service.date).toLocaleDateString()}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="font-mono text-lg font-semibold text-gray-800">${service.odometer.toLocaleString()} km</p>
+          <p class="text-sm">${costDisplay}</p>
+        </div>
+      </div>
+      ${service.notes ? `<div class="bg-white rounded p-3 text-sm text-gray-700"><strong>Notes:</strong> ${service.notes}</div>` : ''}
+      <div class="flex justify-end mt-3">
+        <button onclick="deleteService(${service.id})" class="text-red-500 hover:text-red-700 text-sm font-medium">
+          🗑️ Delete Record
+        </button>
+      </div>
+    `;
+    
+    historyList.appendChild(serviceCard);
+  });
+}
+
+async function deleteService(serviceId) {
+  if (!confirm('Are you sure you want to delete this service record?')) {
+    return;
+  }
+  
+  try {
+    // Remove from local array
+    serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
+    
+    // Save updated history to Google Drive
+    await saveServiceHistoryToDrive();
+    
+    showSuccessMessage('Service record deleted successfully!');
+    renderHistory();
+  } catch (error) {
+    console.error('Failed to delete service record:', error);
+    showErrorMessage('Failed to delete service record.');
+    renderHistory();
+  }
+}
+
+function getCategoryIcon(category) {
+  const icons = {
+    "engine": "🔧",
+    "brake": "🛑",
+    "electrical": "⚡",
+    "fuel": "⛽",
+    "transmission": "⚙️",
+    "cooling": "❄️",
+    "chassis": "🚗",
+    "steering": "🎯",
+    "general": "🔩"
+  };
+  return icons[category] || "🔧";
+}
+
+function checkMaintenance() {
+  const odo = parseInt(document.getElementById("odo").value);
+  
+  if (!odo || odo <= 0) {
+    alert("Please enter a valid odometer reading");
+    return;
+  }
+
+  maintenanceData = [];
+  let criticalCount = 0;
+  let soonCount = 0;
+  let goodCount = 0;
+  let preDriveCount = 0;
+
+  maintenanceItems.forEach(item => {
+    const lastServiceKm = getLastServiceKm(item.item);
+    const nextDue = item.interval === 0 ? 0 : lastServiceKm + item.interval;
+    const kmUntilDue = item.interval === 0 ? 0 : nextDue - odo;
+    const statusInfo = getMaintenanceStatus(odo, item.interval, lastServiceKm);
+    
+    const itemData = {
+      ...item,
+      nextDue,
+      kmUntilDue,
+      statusInfo,
+      lastServiceKm,
+      lastServiceDate: getLastServiceDate(item.item)
+    };
+    
+    maintenanceData.push(itemData);
+    
+    // Count items by status
+    if (statusInfo.status === 'critical') criticalCount++;
+    else if (statusInfo.status === 'soon') soonCount++;
+    else if (statusInfo.status === 'good') goodCount++;
+    else if (statusInfo.status === 'predrive') preDriveCount++;
+  });
+
+  // Sort by priority (critical first, then by km until due)
+  maintenanceData.sort((a, b) => {
+    if (a.statusInfo.priority !== b.statusInfo.priority) {
+      return a.statusInfo.priority - b.statusInfo.priority;
+    }
+    if (a.interval === 0 && b.interval === 0) return 0;
+    if (a.interval === 0) return 1;
+    if (b.interval === 0) return -1;
+    return a.kmUntilDue - b.kmUntilDue;
+  });
+
+  // Update summary cards
+  document.getElementById("criticalCount").textContent = criticalCount;
+  document.getElementById("soonCount").textContent = soonCount;
+  document.getElementById("goodCount").textContent = goodCount;
+  document.getElementById("preDriveCount").textContent = preDriveCount;
+
+  // Show results
+  document.getElementById("summaryDashboard").classList.remove("hidden");
+  document.getElementById("navigationTabs").classList.remove("hidden");
+  document.getElementById("filterTabs").classList.remove("hidden");
+  document.getElementById("maintenanceCard").classList.remove("hidden");
+  document.getElementById("welcomeState").classList.add("hidden");
+
+  renderTable();
+}
+
+function getLastServiceDate(itemName) {
+  const services = serviceHistory.filter(service => service.item === itemName);
+  if (services.length === 0) return null;
+  const latestService = services.reduce((latest, service) => 
+    new Date(service.date) > new Date(latest.date) ? service : latest
+  );
+  return latestService.date;
+}
+
+function renderTable() {
+  const tbody = document.getElementById("maintenanceTableBody");
+  tbody.innerHTML = "";
+
+  const filteredData = currentFilter === 'all' ? maintenanceData : 
+                      maintenanceData.filter(item => item.statusInfo.status === currentFilter);
+
+  filteredData.forEach(item => {
+    const row = document.createElement("tr");
+    row.className = "hover:bg-gray-50 transition-colors duration-150";
+
+    const nextDueDisplay = item.interval === 0 ? 
+      '<span class="text-blue-600 font-semibold">Every Drive</span>' :
+      `<span class="font-mono text-gray-900">${item.nextDue.toLocaleString()}</span>
+       <div class="text-sm text-gray-500">${item.kmUntilDue > 0 ? `in ${item.kmUntilDue.toLocaleString()} km` : 'overdue'}</div>`;
+
+    const lastServiceDisplay = item.lastServiceKm > 0 ? 
+      `<div class="text-xs text-green-600 mt-1">Last: ${item.lastServiceKm.toLocaleString()} km</div>` : 
+      '<div class="text-xs text-gray-400 mt-1">Never serviced</div>';
+
+    row.innerHTML = `
+      <td class="px-6 py-4">
+        <div class="flex items-center">
+          <span class="text-2xl mr-3">${getCategoryIcon(item.category)}</span>
+          <div>
+            <span class="font-semibold text-gray-900">${item.item}</span>
+            <div class="text-sm text-gray-500 capitalize">${item.category}</div>
+            ${lastServiceDisplay}
+          </div>
+        </div>
+      </td>
+      <td class="px-6 py-4">
+        <span class="font-medium text-gray-700">${item.action}</span>
+      </td>
+      <td class="px-6 py-4 text-center">
+        <span class="font-mono text-gray-600">
+          ${item.interval === 0 ? 'Pre-Drive' : item.interval.toLocaleString() + ' km'}
+        </span>
+      </td>
+      <td class="px-6 py-4 text-center">
+        ${nextDueDisplay}
+      </td>
+      <td class="px-6 py-4 text-center">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${item.statusInfo.class}">
+          ${item.statusInfo.label}
+        </span>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function filterItems(filter) {
+  currentFilter = filter;
+  
+  // Update active button
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active', 'bg-blue-600', 'text-white');
+    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+  });
+  
+  event.target.classList.add('active', 'bg-blue-600', 'text-white');
+  event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  
+  renderTable();
+}
+
+// Initialize filter button styles
+document.addEventListener('DOMContentLoaded', function() {
+  const activeBtn = document.querySelector('.filter-btn.active');
+  if (activeBtn) {
+    activeBtn.classList.add('bg-blue-600', 'text-white');
+    activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  }
+  
+  document.querySelectorAll('.filter-btn:not(.active)').forEach(btn => {
+    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+  });
+  
+  // Initialize Google Sign-In
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CONFIG.CLIENT_ID,
+    callback: handleCredentialResponse
+  });
+  
+  // Update the client ID in the HTML element
+  const gIdOnload = document.getElementById('g_id_onload');
+  if (gIdOnload) {
+    gIdOnload.setAttribute('data-client_id', GOOGLE_CONFIG.CLIENT_ID);
+  }
+});
+
+// UI Feedback Functions
+function showLoadingState(message = 'Loading...') {
+  // Create or update loading overlay
+  let overlay = document.getElementById('loadingOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'loadingOverlay';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    overlay.innerHTML = `
+      <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        <span id="loadingMessage" class="text-gray-700 font-medium">${message}</span>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  } else {
+    document.getElementById('loadingMessage').textContent = message;
+    overlay.classList.remove('hidden');
+  }
+}
+
+function hideLoadingState() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+function showSuccessMessage(message) {
+  showToast(message, 'success');
+}
+
+function showErrorMessage(message) {
+  showToast(message, 'error');
+}
+
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium transform transition-all duration-300 translate-x-full`;
+  
+  if (type === 'success') {
+    toast.classList.add('bg-green-600');
+    toast.innerHTML = `<div class="flex items-center"><span class="mr-2">✅</span>${message}</div>`;
+  } else if (type === 'error') {
+    toast.classList.add('bg-red-600');
+    toast.innerHTML = `<div class="flex items-center"><span class="mr-2">❌</span>${message}</div>`;
+  } else {
+    toast.classList.add('bg-blue-600');
+    toast.innerHTML = `<div class="flex items-center"><span class="mr-2">ℹ️</span>${message}</div>`;
+  }
+  
+  document.body.appendChild(toast);
+  
+  // Animate in
+  setTimeout(() => {
+    toast.classList.remove('translate-x-full');
+  }, 100);
+  
+  // Auto remove after 4 seconds
+  setTimeout(() => {
+    toast.classList.add('translate-x-full');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 4000);
+}
+
+// Initialize form and event listeners
+document.addEventListener('DOMContentLoaded', async function() {
+  // Initialize Google APIs (includes One Tap setup)
+  await initializeGoogleAPI();
+  
+  // Load service history (from Google Drive or localStorage)
+  await loadServiceHistory();
+  
+  // Set default date to today
+  document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
+  
+  // Add form submission handler
+  document.getElementById('serviceForm').addEventListener('submit', logService);
+  
+  // Initialize navigation tab styles
+  const activeTab = document.querySelector('.nav-tab.active');
+  if (activeTab) {
+    activeTab.classList.add('bg-blue-600', 'text-white');
+    activeTab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  }
+  
+  document.querySelectorAll('.nav-tab:not(.active)').forEach(btn => {
+    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+  });
+  
+  // Initialize filter button styles
+  const activeFilter = document.querySelector('.filter-btn.active');
+  if (activeFilter) {
+    activeFilter.classList.add('bg-blue-600', 'text-white');
+    activeFilter.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  }
+  
+  document.querySelectorAll('.filter-btn:not(.active)').forEach(btn => {
+    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+  });
+  
+  // Update the client ID in the HTML element
+  const gIdOnload = document.getElementById('g_id_onload');
+  if (gIdOnload) {
+    gIdOnload.setAttribute('data-client_id', GOOGLE_CONFIG.CLIENT_ID);
+  }
+  
+  // Check if user was previously signed in
+  const recentSignIn = localStorage.getItem('google_signin_success');
+  if (recentSignIn) {
+    const timeSinceSignIn = Date.now() - parseInt(recentSignIn);
+    // If signed in within last 7 days, show One Tap more aggressively
+    if (timeSinceSignIn < 7 * 24 * 60 * 60 * 1000) {
+      console.log('Recent sign-in detected, enabling One Tap');
+    }
+  }
+});
+
+// Allow Enter key to trigger check
+document.getElementById("odo").addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    checkMaintenance();
+  }
+});
+</script>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b22ed33645db1c',t:'MTc1OTg5MDI3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

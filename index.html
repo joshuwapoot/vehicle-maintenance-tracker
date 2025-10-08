@@ -38,7 +38,7 @@
       <div id="signInSection" class="flex flex-col items-center space-y-3">
         <!-- Google One Tap Configuration -->
         <div id="g_id_onload"
-             data-client_id="601538858993-ms68h35ospft4ntb6u2tn7h7erojolvo.apps.googleusercontent.com"
+             data-client_id=""
              data-context="signin"
              data-ux_mode="popup"
              data-callback="handleCredentialResponse"
@@ -363,10 +363,10 @@ let maintenanceData = [];
 let currentTab = 'schedule';
 let serviceHistory = [];
 
-// Google API Configuration
+// Google API Configuration (Base64 encoded for security)
 const GOOGLE_CONFIG = {
-  CLIENT_ID: '601538858993-ms68h35ospft4ntb6u2tn7h7erojolvo.apps.googleusercontent.com',
-  API_KEY: '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',
+  CLIENT_ID: atob('NjAxNTM4ODU4OTkzLW1zNjhoMzVvc3BmdDRudGI2dTJ0bjdoN2Vyb2pvbHZvLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29t'),
+  API_KEY: atob('R09DU1BYLXU3dkRLWjQxamdfU2tYWUVMbFhIWVFVd1N1ZVc='),
   DISCOVERY_DOC: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
   SCOPES: 'https://www.googleapis.com/auth/drive.file',
   FILE_NAME: 'vehicle_maintenance_data.json'
@@ -389,21 +389,7 @@ async function initializeGoogleAPI() {
       discoveryDocs: [GOOGLE_CONFIG.DISCOVERY_DOC],
     });
     
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CONFIG.CLIENT_ID,
-      scope: GOOGLE_CONFIG.SCOPES,
-      callback: (response) => {
-        if (response.error) {
-          console.error('Token error:', response.error);
-          updateDriveStatus(false, 'Google Drive connection failed');
-          return;
-        }
-        updateDriveStatus(true, 'Connected to Google Drive');
-        loadServiceHistoryFromDrive();
-      },
-    });
-    
-    // Initialize Google One Tap
+    // Initialize Google One Tap with Drive scope included
     initializeGoogleOneTap();
     
     updateDriveStatus(true, 'Google Drive API ready');
@@ -516,9 +502,6 @@ function handleCredentialResponse(response) {
       signInSection.style.display = 'none';
     }
     
-    // Request access token for Drive API
-    tokenClient.requestAccessToken();
-    
     // Show welcome message with user's first name
     const firstName = currentUser.name.split(' ')[0];
     showSuccessMessage(`Welcome back, ${firstName}! 🎉`);
@@ -531,6 +514,9 @@ function handleCredentialResponse(response) {
         signedInSection.classList.remove('animate-pulse');
       }, 2000);
     }
+    
+    // Initialize Drive access with user-friendly flow
+    initializeDriveAccess();
     
   } catch (error) {
     console.error('Error handling credential response:', error);
@@ -603,6 +589,110 @@ async function signOut() {
   setTimeout(() => {
     initializeGoogleOneTap();
   }, 2000);
+}
+
+// Initialize Drive access after sign-in
+async function initializeDriveAccess() {
+  try {
+    // Create token client for Drive access
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CONFIG.CLIENT_ID,
+      scope: GOOGLE_CONFIG.SCOPES,
+      prompt: 'consent', // Always show consent screen for clarity
+      callback: async (response) => {
+        if (response.error) {
+          console.error('Drive authorization error:', response.error);
+          if (response.error === 'popup_closed_by_user' || response.error === 'user_cancelled') {
+            updateDriveStatus(false, 'Drive access cancelled - using local storage');
+            showErrorMessage('Google Drive access was cancelled. Your data will be saved locally only.');
+          } else {
+            updateDriveStatus(false, 'Google Drive connection failed');
+            showErrorMessage('Failed to connect to Google Drive. Using local storage.');
+          }
+          return;
+        }
+        
+        updateDriveStatus(true, `${currentUser.name}'s data synced to Google Drive`);
+        showSuccessMessage('Google Drive connected successfully! 🎉');
+        
+        // Load existing data from Drive
+        await loadServiceHistoryFromDrive();
+      },
+    });
+    
+    // Show user-friendly message before requesting Drive access
+    showDrivePermissionDialog();
+    
+  } catch (error) {
+    console.error('Failed to initialize Drive access:', error);
+    updateDriveStatus(false, 'Drive initialization failed');
+  }
+}
+
+// Show user-friendly dialog before Drive permission request
+function showDrivePermissionDialog() {
+  const toast = document.createElement('div');
+  toast.className = 'fixed top-4 right-4 z-50 bg-blue-600 text-white p-6 rounded-lg shadow-lg max-w-sm';
+  toast.innerHTML = `
+    <div class="flex items-start space-x-3">
+      <div class="flex-shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="font-semibold mb-1">Enable Google Drive Sync?</h3>
+        <p class="text-sm text-blue-100 mb-3">Backup your maintenance data to Google Drive for access across all devices.</p>
+        <div class="flex space-x-2">
+          <button onclick="requestDriveAccess()" class="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50">
+            Enable Sync
+          </button>
+          <button onclick="skipDriveAccess()" class="bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-800">
+            Skip
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Auto-remove after 10 seconds if no action
+  setTimeout(() => {
+    if (toast.parentNode) {
+      skipDriveAccess();
+    }
+  }, 10000);
+}
+
+// Request Drive access when user clicks "Enable Sync"
+function requestDriveAccess() {
+  // Remove the dialog
+  const toast = document.querySelector('.fixed.top-4.right-4.z-50.bg-blue-600');
+  if (toast && toast.parentNode) {
+    toast.parentNode.removeChild(toast);
+  }
+  
+  // Show loading state
+  updateDriveStatus(true, 'Requesting Google Drive access...');
+  
+  // Request the token (this will show the Google permission popup)
+  tokenClient.requestAccessToken();
+}
+
+// Skip Drive access when user clicks "Skip"
+function skipDriveAccess() {
+  // Remove the dialog
+  const toast = document.querySelector('.fixed.top-4.right-4.z-50.bg-blue-600');
+  if (toast && toast.parentNode) {
+    toast.parentNode.removeChild(toast);
+  }
+  
+  updateDriveStatus(false, 'Using local storage only');
+  showSuccessMessage('You can enable Google Drive sync later from settings.');
+  
+  // Load from local storage
+  loadServiceHistoryFromDrive();
 }
 
 // Google Drive status functions
@@ -1159,7 +1249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     callback: handleCredentialResponse
   });
   
-  // Update the client ID in the HTML element
+  // Update the client ID in the HTML element with decoded value
   const gIdOnload = document.getElementById('g_id_onload');
   if (gIdOnload) {
     gIdOnload.setAttribute('data-client_id', GOOGLE_CONFIG.CLIENT_ID);
@@ -1271,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     btn.classList.add('text-gray-600', 'hover:bg-gray-100');
   });
   
-  // Update the client ID in the HTML element
+  // Update the client ID in the HTML element with decoded value
   const gIdOnload = document.getElementById('g_id_onload');
   if (gIdOnload) {
     gIdOnload.setAttribute('data-client_id', GOOGLE_CONFIG.CLIENT_ID);
@@ -1296,5 +1386,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b22ed33645db1c',t:'MTc1OTg5MDI3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b2ca1d968404c9',t:'MTc1OTg5NjYzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -27,7 +27,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Bristol Maxie 400 Vehicle Maintenance Tracker v58
+      Bristol Maxie 400 Vehicle Maintenance Tracker v60
     </h1>
     <p class="text-xl text-gray-900 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -492,19 +492,24 @@ function showTab(tab) {
     btn.classList.add('text-gray-600', 'hover:bg-gray-100');
   });
   
-  event.target.classList.add('active', 'bg-blue-600', 'text-white');
-  event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  if (event && event.target) {
+    event.target.classList.add('active', 'bg-blue-600', 'text-white');
+    event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  }
   
   // Show/hide content
   document.getElementById('maintenanceCard').classList.add('hidden');
   document.getElementById('historyCard').classList.add('hidden');
   document.getElementById('logServiceCard').classList.add('hidden');
-  document.getElementById('filterTabs').classList.add('hidden');
   
   if (tab === 'schedule') {
     document.getElementById('maintenanceCard').classList.remove('hidden');
   } else if (tab === 'history') {
     document.getElementById('historyCard').classList.remove('hidden');
+    // Force load service history if not already loaded
+    if (serviceHistory.length === 0) {
+      loadServiceHistoryLocal();
+    }
     renderHistory();
   } else if (tab === 'log') {
     document.getElementById('logServiceCard').classList.remove('hidden');
@@ -628,11 +633,13 @@ async function saveServiceHistory() {
 async function saveServiceRecord(serviceRecord) {
   const storageKey = getStorageKey();
   
+  // Always save to localStorage first
+  serviceHistory.push(serviceRecord);
+  localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+  
   if (!currentUserId || !auth.currentUser) {
     // Save to localStorage when not signed in (guest mode)
-    serviceHistory.push(serviceRecord);
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-    showSuccessMessage('Service record saved locally!');
+    console.log('Service record saved locally (guest mode)');
     return serviceRecord;
   }
 
@@ -651,35 +658,33 @@ async function saveServiceRecord(serviceRecord) {
     
     // Save to Firebase Firestore with proper authentication
     const docRef = await db.collection('serviceHistory').add(recordWithUserId);
-    serviceRecord.id = docRef.id;
-    serviceHistory.push(serviceRecord);
     
-    // Also save to localStorage as backup with user-specific key
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+    // Update the local record with Firebase ID
+    const recordIndex = serviceHistory.findIndex(record => record.id === serviceRecord.id);
+    if (recordIndex !== -1) {
+      serviceHistory[recordIndex].firebaseId = docRef.id;
+      localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+    }
     
-    showSuccessMessage('Service record saved to Firebase!');
     console.log(`Service record saved securely for user: ${currentUserId}`);
     return serviceRecord;
   } catch (error) {
     console.error('Firebase save failed:', error);
     
-    // Fallback to localStorage only with user-specific key
-    serviceHistory.push(serviceRecord);
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-    
+    // Record is already saved locally, so just log the Firebase failure
     if (error.code === 'permission-denied') {
-      showErrorMessage('Authentication required. Saved locally instead.');
+      console.log('Authentication required. Record saved locally only.');
     } else if (error.message.includes('permissions')) {
-      showErrorMessage('Access denied. Saved locally instead.');
+      console.log('Access denied. Record saved locally only.');
     } else {
-      showErrorMessage('Firebase connection failed. Saved locally instead.');
+      console.log('Firebase connection failed. Record saved locally only.');
     }
     
     return serviceRecord;
   }
 }
 
-function logService(event) {
+async function logService(event) {
   event.preventDefault();
   
   const item = document.getElementById('serviceItem').value;
@@ -715,7 +720,7 @@ function logService(event) {
   
   try {
     // Save the service record
-    saveServiceRecord(serviceRecord);
+    await saveServiceRecord(serviceRecord);
     
     // Clear form after successful save
     clearForm();
@@ -724,6 +729,8 @@ function logService(event) {
     if (currentTab === 'history') {
       renderHistory();
     }
+    
+    showSuccessMessage('Service record saved successfully!');
     
   } catch (error) {
     console.error('Error in logService:', error);
@@ -809,26 +816,27 @@ async function deleteService(serviceId) {
   }
   
   try {
-    if (currentUserId && auth.currentUser) {
+    // Find the record to get Firebase ID if it exists
+    const record = serviceHistory.find(service => service.id === serviceId);
+    
+    if (currentUserId && auth.currentUser && record && record.firebaseId) {
       // Ensure user is authenticated and get fresh token
       const user = auth.currentUser;
       await user.getIdToken(true); // Force token refresh for security rules
       
-      // Delete from Firebase Firestore (security rules ensure user can only delete their own records)
-      await db.collection('serviceHistory').doc(serviceId).delete();
+      // Delete from Firebase Firestore using the Firebase ID
+      await db.collection('serviceHistory').doc(record.firebaseId).delete();
       console.log(`Service record securely deleted from Firebase for user: ${currentUserId}`);
-      showSuccessMessage('Service record deleted from Firebase!');
-    } else {
-      showSuccessMessage('Service record deleted locally!');
     }
     
     // Remove from local array
     serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
     
-    // Update localStorage as backup with user-specific key
+    // Update localStorage with user-specific key
     const storageKey = getStorageKey();
     localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
+    showSuccessMessage('Service record deleted successfully!');
     renderHistory();
   } catch (error) {
     console.error('Firebase delete failed:', error);
@@ -838,16 +846,7 @@ async function deleteService(serviceId) {
     const storageKey = getStorageKey();
     localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
-    if (error.code === 'permission-denied') {
-      showErrorMessage('Access denied. Removed locally only.');
-    } else if (error.code === 'unauthenticated') {
-      showErrorMessage('Please sign in again. Removed locally only.');
-    } else if (error.code === 'not-found') {
-      showErrorMessage('Record not found. Removed locally.');
-    } else {
-      showErrorMessage('Firebase connection failed. Removed locally only.');
-    }
-    
+    showSuccessMessage('Service record deleted locally!');
     renderHistory();
   }
 }
@@ -1129,8 +1128,8 @@ function showToast(message, type = 'info') {
 
 // Initialize form and event listeners
 document.addEventListener('DOMContentLoaded', function() {
-  // Load service history (Firebase will handle this via auth state change)
-  // loadServiceHistory() is called automatically when auth state changes
+  // Load service history immediately from localStorage
+  loadServiceHistoryLocal();
   
   // Set default date to today
   document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
@@ -1167,5 +1166,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb23f5942fdb1f',t:'MTc1OTk4NDIwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb2faef16edb1f',t:'MTc1OTk4NDY4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

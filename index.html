@@ -27,7 +27,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Bristol Maxie 400 Vehicle Maintenance Tracker
+      Bristol Maxie 400 Vehicle Maintenance Tracker v55
     </h1>
     <p class="text-xl text-gray-900 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -63,8 +63,21 @@
   </div>
 
   <!-- Summary Dashboard -->
-  <div id="summaryDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+  <div id="summaryDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 hidden">
+    <div onclick="filterItems('all')" class="filter-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-gray-500 cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">All Items</p>
+          <p id="allCount" class="text-3xl font-bold text-gray-600">0</p>
+          <p class="text-xs text-gray-500 mt-1">Total items</p>
+        </div>
+        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+          <span class="text-2xl">📋</span>
+        </div>
+      </div>
+    </div>
+    
+    <div onclick="filterItems('critical')" class="filter-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500 cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Critical</p>
@@ -77,7 +90,7 @@
       </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+    <div onclick="filterItems('soon')" class="filter-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Due Soon</p>
@@ -90,7 +103,7 @@
       </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div onclick="filterItems('good')" class="filter-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Good</p>
@@ -103,7 +116,7 @@
       </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div onclick="filterItems('predrive')" class="filter-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 cursor-pointer hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pre-Drive</p>
@@ -117,26 +130,7 @@
     </div>
   </div>
 
-  <!-- Filter Tabs -->
-  <div id="filterTabs" class="bg-white rounded-xl shadow-lg p-2 mb-6 hidden">
-    <div class="flex flex-wrap gap-2">
-      <button onclick="filterItems('all')" class="filter-btn active px-4 py-2 rounded-lg font-semibold transition-all duration-200">
-        All Items
-      </button>
-      <button onclick="filterItems('critical')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
-        Critical
-      </button>
-      <button onclick="filterItems('soon')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
-        Due Soon
-      </button>
-      <button onclick="filterItems('good')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
-        Good
-      </button>
-      <button onclick="filterItems('predrive')" class="filter-btn px-4 py-2 rounded-lg font-semibold transition-all duration-200">
-        Pre-Drive
-      </button>
-    </div>
-  </div>
+
 
   <!-- Navigation Tabs -->
   <div id="navigationTabs" class="bg-white rounded-xl shadow-lg p-2 mb-6 hidden">
@@ -509,7 +503,6 @@ function showTab(tab) {
   
   if (tab === 'schedule') {
     document.getElementById('maintenanceCard').classList.remove('hidden');
-    document.getElementById('filterTabs').classList.remove('hidden');
   } else if (tab === 'history') {
     document.getElementById('historyCard').classList.remove('hidden');
     renderHistory();
@@ -924,6 +917,7 @@ function checkMaintenance() {
   });
 
   // Update summary cards
+  document.getElementById("allCount").textContent = maintenanceData.length;
   document.getElementById("criticalCount").textContent = criticalCount;
   document.getElementById("soonCount").textContent = soonCount;
   document.getElementById("goodCount").textContent = goodCount;
@@ -932,7 +926,6 @@ function checkMaintenance() {
   // Show results
   document.getElementById("summaryDashboard").classList.remove("hidden");
   document.getElementById("navigationTabs").classList.remove("hidden");
-  document.getElementById("filterTabs").classList.remove("hidden");
   document.getElementById("maintenanceCard").classList.remove("hidden");
   document.getElementById("welcomeState").classList.add("hidden");
 
@@ -1003,14 +996,18 @@ function renderTable() {
 function filterItems(filter) {
   currentFilter = filter;
   
-  // Update active button
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.remove('active', 'bg-blue-600', 'text-white');
-    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+  // Update active card styling
+  document.querySelectorAll('.filter-card').forEach(card => {
+    card.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
+    card.classList.add('bg-white');
   });
   
-  event.target.classList.add('active', 'bg-blue-600', 'text-white');
-  event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
+  // Find and highlight the active card
+  const activeCard = event ? event.currentTarget : document.querySelector(`[onclick="filterItems('${filter}')"]`);
+  if (activeCard) {
+    activeCard.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+    activeCard.classList.remove('bg-white');
+  }
   
   renderTable();
 }
@@ -1079,16 +1076,14 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.classList.add('text-gray-600', 'hover:bg-gray-100');
   });
   
-  // Initialize filter button styles
-  const activeFilter = document.querySelector('.filter-btn.active');
-  if (activeFilter) {
-    activeFilter.classList.add('bg-blue-600', 'text-white');
-    activeFilter.classList.remove('text-gray-600', 'hover:bg-gray-100');
-  }
-  
-  document.querySelectorAll('.filter-btn:not(.active)').forEach(btn => {
-    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
-  });
+  // Initialize filter card - set "All Items" as default active
+  setTimeout(() => {
+    const allItemsCard = document.querySelector(`[onclick="filterItems('all')"]`);
+    if (allItemsCard) {
+      allItemsCard.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+      allItemsCard.classList.remove('bg-white');
+    }
+  }, 100);
 });
 
 // Allow Enter key to trigger check
@@ -1099,5 +1094,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb0934176bdb1f',t:'MTc1OTk4MzEwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb14da94b5db1f',t:'MTc1OTk4MzU4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

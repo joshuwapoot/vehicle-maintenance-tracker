@@ -27,7 +27,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Bristol Maxie 400 Vehicle Maintenance Tracker v55
+      Bristol Maxie 400 Vehicle Maintenance Tracker
     </h1>
     <p class="text-xl text-gray-900 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -943,54 +943,118 @@ function getLastServiceDate(itemName) {
 
 function renderTable() {
   const tbody = document.getElementById("maintenanceTableBody");
-  tbody.innerHTML = "";
-
+  
   const filteredData = currentFilter === 'all' ? maintenanceData : 
                       maintenanceData.filter(item => item.statusInfo.status === currentFilter);
 
-  filteredData.forEach(item => {
-    const row = document.createElement("tr");
-    row.className = "hover:bg-gray-50 transition-colors duration-150";
+  // First, slide out existing rows
+  const existingRows = tbody.querySelectorAll('tr');
+  if (existingRows.length > 0) {
+    existingRows.forEach((row, index) => {
+      setTimeout(() => {
+        row.style.transform = 'translateX(-100%)';
+        row.style.opacity = '0';
+      }, index * 50);
+    });
+    
+    // Calculate slide out duration based on number of existing rows
+    const slideOutDuration = existingRows.length * 50 + 300;
+    
+    // Wait for slide out animation to complete, then clear and add new rows
+    setTimeout(() => {
+      tbody.innerHTML = "";
+      addNewRows();
+    }, slideOutDuration);
+  } else {
+    // No existing rows, add new ones immediately
+    addNewRows();
+  }
 
-    const nextDueDisplay = item.interval === 0 ? 
-      '<span class="text-blue-600 font-semibold">Every Drive</span>' :
-      `<span class="font-mono text-gray-900">${item.nextDue.toLocaleString()}</span>
-       <div class="text-sm text-gray-500">${item.kmUntilDue > 0 ? `in ${item.kmUntilDue.toLocaleString()} km` : 'overdue'}</div>`;
-
-    const lastServiceDisplay = item.lastServiceKm > 0 ? 
-      `<div class="text-xs text-green-600 mt-1">Last: ${item.lastServiceKm.toLocaleString()} km</div>` : 
-      '<div class="text-xs text-gray-400 mt-1">Never serviced</div>';
-
-    row.innerHTML = `
-      <td class="px-6 py-4">
-        <div class="flex items-center">
-          <span class="text-2xl mr-3">${getCategoryIcon(item.category)}</span>
-          <div>
-            <span class="font-semibold text-gray-900">${item.item}</span>
-            <div class="text-sm text-gray-500 capitalize">${item.category}</div>
-            ${lastServiceDisplay}
+  function addNewRows() {
+    if (filteredData.length === 0) {
+      // Show empty state with smooth animation
+      const emptyRow = document.createElement("tr");
+      emptyRow.className = "transition-all duration-500";
+      emptyRow.style.transform = 'translateY(20px)';
+      emptyRow.style.opacity = '0';
+      
+      emptyRow.innerHTML = `
+        <td colspan="5" class="px-6 py-16 text-center">
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <span class="text-2xl">📋</span>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600 mb-2">No items in this category</h3>
+            <p class="text-gray-500">Try selecting a different filter or check your maintenance data</p>
           </div>
-        </div>
-      </td>
-      <td class="px-6 py-4">
-        <span class="font-medium text-gray-700">${item.action}</span>
-      </td>
-      <td class="px-6 py-4 text-center">
-        <span class="font-mono text-gray-600">
-          ${item.interval === 0 ? 'Pre-Drive' : item.interval.toLocaleString() + ' km'}
-        </span>
-      </td>
-      <td class="px-6 py-4 text-center">
-        ${nextDueDisplay}
-      </td>
-      <td class="px-6 py-4 text-center">
-        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${item.statusInfo.class}">
-          ${item.statusInfo.label}
-        </span>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
+        </td>
+      `;
+      
+      tbody.appendChild(emptyRow);
+      
+      // Animate in the empty state
+      setTimeout(() => {
+        emptyRow.style.transform = 'translateY(0)';
+        emptyRow.style.opacity = '1';
+      }, 100);
+      
+      return;
+    }
+    
+    // Add rows with data
+    filteredData.forEach((item, index) => {
+      const row = document.createElement("tr");
+      row.className = "hover:bg-gray-50 transition-all duration-300";
+      row.style.transform = 'translateX(100%)';
+      row.style.opacity = '0';
+
+      const nextDueDisplay = item.interval === 0 ? 
+        '<span class="text-blue-600 font-semibold">Every Drive</span>' :
+        `<span class="font-mono text-gray-900">${item.nextDue.toLocaleString()}</span>
+         <div class="text-sm text-gray-500">${item.kmUntilDue > 0 ? `in ${item.kmUntilDue.toLocaleString()} km` : 'overdue'}</div>`;
+
+      const lastServiceDisplay = item.lastServiceKm > 0 ? 
+        `<div class="text-xs text-green-600 mt-1">Last: ${item.lastServiceKm.toLocaleString()} km</div>` : 
+        '<div class="text-xs text-gray-400 mt-1">Never serviced</div>';
+
+      row.innerHTML = `
+        <td class="px-6 py-4">
+          <div class="flex items-center">
+            <span class="text-2xl mr-3">${getCategoryIcon(item.category)}</span>
+            <div>
+              <span class="font-semibold text-gray-900">${item.item}</span>
+              <div class="text-sm text-gray-500 capitalize">${item.category}</div>
+              ${lastServiceDisplay}
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <span class="font-medium text-gray-700">${item.action}</span>
+        </td>
+        <td class="px-6 py-4 text-center">
+          <span class="font-mono text-gray-600">
+            ${item.interval === 0 ? 'Pre-Drive' : item.interval.toLocaleString() + ' km'}
+          </span>
+        </td>
+        <td class="px-6 py-4 text-center">
+          ${nextDueDisplay}
+        </td>
+        <td class="px-6 py-4 text-center">
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${item.statusInfo.class}">
+            ${item.statusInfo.label}
+          </span>
+        </td>
+      `;
+      
+      tbody.appendChild(row);
+      
+      // Slide in each row with a staggered delay
+      setTimeout(() => {
+        row.style.transform = 'translateX(0)';
+        row.style.opacity = '1';
+      }, index * 100 + 50);
+    });
+  }
 }
 
 function filterItems(filter) {
@@ -1007,6 +1071,15 @@ function filterItems(filter) {
   if (activeCard) {
     activeCard.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
     activeCard.classList.remove('bg-white');
+  }
+  
+  // Scroll to the maintenance table section
+  const maintenanceCard = document.getElementById('maintenanceCard');
+  if (maintenanceCard && !maintenanceCard.classList.contains('hidden')) {
+    maintenanceCard.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
   }
   
   renderTable();
@@ -1094,5 +1167,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb14da94b5db1f',t:'MTc1OTk4MzU4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb23f5942fdb1f',t:'MTc1OTk4NDIwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

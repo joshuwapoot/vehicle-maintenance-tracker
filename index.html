@@ -18,20 +18,20 @@
 
 <div class="container mx-auto px-4 py-8 max-w-7xl">
   <!-- Header -->
-  <div class="text-center mb-8">
+  <div class="text-center mb-8 relative">
+
+    
     <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-4 shadow-lg">
       <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Vehicle Maintenance Tracker v41
+      Vehicle Maintenance Tracker v50
     </h1>
-    <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+    <p class="text-xl text-gray-900 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
     </p>
-    
-
   </div>
 
   <!-- Odometer Input Card -->
@@ -52,7 +52,7 @@
         <div class="relative">
           <input type="number" id="odo" placeholder="e.g. 12000" 
                  class="px-6 py-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none text-xl w-56 text-center font-mono shadow-sm">
-          <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-semibold">km</span>
+          <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">km</span>
         </div>
         <button onclick="checkMaintenance()" 
                 class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
@@ -207,7 +207,7 @@
 
   <!-- Service History -->
   <div id="historyCard" class="bg-white rounded-xl shadow-lg overflow-hidden hidden">
-    <div class="px-8 py-6 bg-gradient-to-r from-green-50 to-blue-50 border-b">
+    <div class="px-8 py-6 bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200">
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-2xl font-bold text-gray-800">Service History</h2>
@@ -237,7 +237,7 @@
 
   <!-- Maintenance Table -->
   <div id="maintenanceCard" class="bg-white rounded-xl shadow-lg overflow-hidden hidden">
-    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-blue-50 border-b">
+    <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
       <h2 class="text-2xl font-bold text-gray-800">Detailed Maintenance Schedule</h2>
       <p class="text-gray-600 mt-1">Complete overview of all maintenance requirements</p>
     </div>
@@ -267,8 +267,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
       </svg>
     </div>
-    <h3 class="text-3xl font-bold text-gray-700 mb-4">Ready for Vehicle Analysis</h3>
-    <p class="text-xl text-gray-500 max-w-md mx-auto">Enter your current odometer reading to get a comprehensive maintenance report with priority recommendations</p>
+    <h3 class="text-3xl font-bold text-gray-900 mb-4">Ready for Vehicle Analysis</h3>
+    <p class="text-xl text-gray-900 max-w-md mx-auto">Enter your current odometer reading to get a comprehensive maintenance report with priority recommendations</p>
   </div>
 </div>
 
@@ -293,8 +293,8 @@
         </svg>
       </div>
       <div class="flex-1">
-        <h3 class="text-sm font-semibold text-gray-800">Sign in to Google</h3>
-        <p id="sign-in-status" class="text-xs text-gray-600">Sync your data across devices</p>
+        <h3 class="text-sm font-semibold text-gray-900">Sign in to Google</h3>
+        <p id="sign-in-status" class="text-xs text-gray-900">Sync your data across devices</p>
       </div>
       <button onclick="slideOutAuthBox()" class="text-gray-400 hover:text-gray-600 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +304,7 @@
     </div>
     
     <div class="flex space-x-2">
-      <button onclick="slideOutAuthBox()" class="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+      <button onclick="slideOutAuthBox()" class="flex-1 bg-gray-100 text-gray-900 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
         Stay signed out
       </button>
       <button id="sign-in-btn" onclick="signInWithGoogle()" class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -319,7 +319,7 @@
           <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
             <span class="text-xs">✓</span>
           </div>
-          <span id="userEmail" class="text-sm text-gray-700"></span>
+          <span id="userEmail" class="text-sm text-gray-900"></span>
         </div>
         <button id="sign-out-btn" onclick="signOut()" class="text-xs text-red-600 hover:text-red-700 font-medium">
           Sign out
@@ -392,6 +392,8 @@ let maintenanceData = [];
 let currentTab = 'schedule';
 let serviceHistory = [];
 
+
+
 // Listen for authentication state changes
 auth.onAuthStateChanged((user) => {
   const authBox = document.getElementById('authBox');
@@ -410,6 +412,10 @@ auth.onAuthStateChanged((user) => {
     authTab.classList.add('bg-green-600', 'hover:bg-green-700');
     // Automatically load the user's logs when signed in
     loadServiceHistory();
+    // Auto-collapse auth box after successful sign in
+    setTimeout(() => {
+      slideOutAuthBox();
+    }, 2000);
   } else {
     currentUserId = null;
     signInButtons.classList.remove('hidden');
@@ -1096,5 +1102,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98babfea71a3db1f',t:'MTc1OTk4MDEwNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98baf44432c3db1f',t:'MTc1OTk4MjI1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

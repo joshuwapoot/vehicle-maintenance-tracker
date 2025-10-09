@@ -25,36 +25,13 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Vehicle Maintenance Tracker v36
+      Vehicle Maintenance Tracker v38
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
     </p>
     
-    <!-- Firebase Authentication Status -->
-    <div class="mt-4 max-w-2xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <div class="flex items-start space-x-3">
-        <div class="flex-shrink-0">
-          <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h3 class="text-sm font-semibold text-blue-800 mb-1">🔐 Firebase Authentication</h3>
-          <p id="sign-in-status" class="text-sm text-blue-700 mb-2">
-            Signed out - Sign in to sync your data across devices
-          </p>
-          <div class="flex space-x-2">
-            <button id="sign-in-btn" onclick="signInWithGoogle()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-700">
-              Sign In with Google
-            </button>
-            <button id="sign-out-btn" onclick="signOut()" class="bg-gray-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-gray-600 hidden">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </div>
 
   <!-- Odometer Input Card -->
@@ -295,6 +272,63 @@
   </div>
 </div>
 
+<!-- Floating Authentication Box -->
+<div id="authBox" class="fixed bottom-6 right-6 z-50 transition-all duration-300 transform translate-x-full">
+  <!-- Slide-in Tab -->
+  <div id="authTab" class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-full bg-blue-600 text-white px-2 py-3 rounded-l-lg shadow-lg cursor-pointer hover:bg-blue-700 transition-colors" onclick="slideInAuthBox()">
+    <div class="flex flex-col items-center space-y-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+      <span class="text-xs font-medium writing-mode-vertical transform rotate-180" style="writing-mode: vertical-rl;">Sign In</span>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div id="authContent" class="bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm">
+    <div class="flex items-center space-x-3 mb-3">
+      <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-sm font-semibold text-gray-800">Sign in to Google</h3>
+        <p id="sign-in-status" class="text-xs text-gray-600">Sync your data across devices</p>
+      </div>
+      <button onclick="slideOutAuthBox()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="flex space-x-2">
+      <button onclick="slideOutAuthBox()" class="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+        Stay signed out
+      </button>
+      <button id="sign-in-btn" onclick="signInWithGoogle()" class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+        Sign in
+      </button>
+    </div>
+    
+    <!-- Signed in state (hidden by default) -->
+    <div id="signedInState" class="hidden">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+            <span class="text-xs">✓</span>
+          </div>
+          <span id="userEmail" class="text-sm text-gray-700"></span>
+        </div>
+        <button id="sign-out-btn" onclick="signOut()" class="text-xs text-red-600 hover:text-red-700 font-medium">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // Firebase Configuration
 const firebaseConfig = {
@@ -360,18 +394,29 @@ let serviceHistory = [];
 
 // Listen for authentication state changes
 auth.onAuthStateChanged((user) => {
+  const authBox = document.getElementById('authBox');
+  const signedInState = document.getElementById('signedInState');
+  const signInButtons = authBox.querySelector('.flex.space-x-2');
+  const authTab = document.getElementById('authTab');
+  const tabText = authTab.querySelector('span');
+  
   if (user) {
     currentUserId = user.uid;
-    document.getElementById('sign-in-status').textContent = `Signed in as: ${user.email}`;
-    document.getElementById('sign-in-btn').classList.add('hidden');
-    document.getElementById('sign-out-btn').classList.remove('hidden');
+    document.getElementById('userEmail').textContent = user.email;
+    signInButtons.classList.add('hidden');
+    signedInState.classList.remove('hidden');
+    tabText.textContent = 'Signed In';
+    authTab.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+    authTab.classList.add('bg-green-600', 'hover:bg-green-700');
     // Automatically load the user's logs when signed in
     loadServiceHistory();
   } else {
     currentUserId = null;
-    document.getElementById('sign-in-status').textContent = 'Signed out - Sign in to sync your data across devices';
-    document.getElementById('sign-in-btn').classList.remove('hidden');
-    document.getElementById('sign-out-btn').classList.add('hidden');
+    signInButtons.classList.remove('hidden');
+    signedInState.classList.add('hidden');
+    tabText.textContent = 'Sign In';
+    authTab.classList.remove('bg-green-600', 'hover:bg-green-700');
+    authTab.classList.add('bg-blue-600', 'hover:bg-blue-700');
     // Load from localStorage when signed out
     loadServiceHistoryLocal();
   }
@@ -402,6 +447,16 @@ function signOut() {
       console.error('Sign-out error:', error);
       showErrorMessage('Sign-out failed. Please try again.');
     });
+}
+
+function slideOutAuthBox() {
+  const authBox = document.getElementById('authBox');
+  authBox.classList.add('translate-x-full');
+}
+
+function slideInAuthBox() {
+  const authBox = document.getElementById('authBox');
+  authBox.classList.remove('translate-x-full');
 }
 
 function getNextDueKm(currentKm, interval) {
@@ -1020,5 +1075,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98b5e08c317e04c9',t:'MTc1OTkyOTAxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98ba8ee0417cdb1f',t:'MTc1OTk3ODA5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

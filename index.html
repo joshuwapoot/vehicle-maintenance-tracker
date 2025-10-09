@@ -25,7 +25,7 @@
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Vehicle Maintenance Tracker v38
+      Vehicle Maintenance Tracker v39
     </h1>
     <p class="text-xl text-gray-600 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -561,8 +561,9 @@ async function loadServiceHistory() {
       serviceHistory.push({ id: doc.id, ...data });
     });
     
-    // Also save to localStorage as backup
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    // Also save to localStorage as backup with user-specific key
+    const storageKey = getStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
     console.log(`Secure data loaded from Firebase: ${serviceHistory.length} records`);
     showSuccessMessage(`Synced ${serviceHistory.length} records from Firebase!`);
@@ -588,35 +589,49 @@ async function loadServiceHistory() {
 
 // Load service history from localStorage (fallback)
 function loadServiceHistoryLocal() {
-  const stored = localStorage.getItem('vehicleServiceHistory');
+  const storageKey = getStorageKey();
+  const stored = localStorage.getItem(storageKey);
   serviceHistory = stored ? JSON.parse(stored) : [];
-  console.log(`Loaded ${serviceHistory.length} records from localStorage`);
+  console.log(`Loaded ${serviceHistory.length} records from ${storageKey}`);
   return serviceHistory;
+}
+
+// Get storage key based on user authentication status
+function getStorageKey() {
+  if (currentUserId) {
+    return `vehicleServiceHistory_${currentUserId}`;
+  } else {
+    return 'vehicleServiceHistory_guest';
+  }
 }
 
 // Save service history to Firebase or localStorage
 async function saveServiceHistory() {
+  const storageKey = getStorageKey();
+  
   if (currentUserId) {
     try {
       // Save to Firebase - this is handled individually per record
       console.log('Service history synced to Firebase');
     } catch (error) {
       console.error('Error saving to Firebase:', error);
-      // Fallback to localStorage
-      localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+      // Fallback to localStorage with user-specific key
+      localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     }
   } else {
-    // Save to localStorage when not signed in
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    // Save to localStorage when not signed in (guest mode)
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
   }
 }
 
 // --- Function to save individual service record ---
 async function saveServiceRecord(serviceRecord) {
+  const storageKey = getStorageKey();
+  
   if (!currentUserId || !auth.currentUser) {
-    // Save to localStorage when not signed in
+    // Save to localStorage when not signed in (guest mode)
     serviceHistory.push(serviceRecord);
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     showSuccessMessage('Service record saved locally!');
     return serviceRecord;
   }
@@ -639,8 +654,8 @@ async function saveServiceRecord(serviceRecord) {
     serviceRecord.id = docRef.id;
     serviceHistory.push(serviceRecord);
     
-    // Also save to localStorage as backup
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    // Also save to localStorage as backup with user-specific key
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
     showSuccessMessage('Service record saved to Firebase!');
     console.log(`Service record saved securely for user: ${currentUserId}`);
@@ -648,9 +663,9 @@ async function saveServiceRecord(serviceRecord) {
   } catch (error) {
     console.error('Firebase save failed:', error);
     
-    // Fallback to localStorage only
+    // Fallback to localStorage only with user-specific key
     serviceHistory.push(serviceRecord);
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
     if (error.code === 'permission-denied') {
       showErrorMessage('Authentication required. Saved locally instead.');
@@ -810,8 +825,9 @@ async function deleteService(serviceId) {
     // Remove from local array
     serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
     
-    // Update localStorage as backup
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    // Update localStorage as backup with user-specific key
+    const storageKey = getStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
     renderHistory();
   } catch (error) {
@@ -819,7 +835,8 @@ async function deleteService(serviceId) {
     
     // Still remove from local array as fallback
     serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
-    localStorage.setItem('vehicleServiceHistory', JSON.stringify(serviceHistory));
+    const storageKey = getStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
     
     if (error.code === 'permission-denied') {
       showErrorMessage('Access denied. Removed locally only.');
@@ -1075,5 +1092,5 @@ document.getElementById("odo").addEventListener("keypress", function(event) {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98ba8ee0417cdb1f',t:'MTc1OTk3ODA5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98baa2baf574db1f',t:'MTc1OTk3ODkxMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

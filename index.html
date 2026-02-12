@@ -19,15 +19,13 @@
 <div class="container mx-auto px-4 py-8 max-w-7xl">
   <!-- Header -->
   <div class="text-center mb-8 relative">
-
-    
     <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-4 shadow-lg">
       <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
       </svg>
     </div>
     <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-      Bristol Maxie 400 Vehicle Maintenance Tracker v60
+      Bristol Maxie 400 Vehicle Maintenance Tracker v61
     </h1>
     <p class="text-xl text-gray-900 max-w-2xl mx-auto">
       Comprehensive maintenance scheduling for optimal vehicle performance and safety
@@ -129,8 +127,6 @@
       </div>
     </div>
   </div>
-
-
 
   <!-- Navigation Tabs -->
   <div id="navigationTabs" class="bg-white rounded-xl shadow-lg p-2 mb-6 hidden">
@@ -338,7 +334,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Configure Firestore to use the specified database location
 db.settings({
   host: 'firestore.googleapis.com',
   ssl: true
@@ -347,43 +342,75 @@ db.settings({
 // Global variables
 let currentUserId = null;
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  MAINTENANCE ITEMS  (corrected per official Bristol Maxie 400 schedule)
+//
+//  Codes:
+//    I  = Inspect, clean, adjust, lubricate, or replace as needed
+//    R  = Replace
+//  Intervals are in km.  interval: 0  → pre-drive check (every trip).
+// ─────────────────────────────────────────────────────────────────────────────
 const maintenanceItems = [
-  { item: "Battery", action: "Charge", interval: 4000, category: "electrical" },
-  { item: "Brake Fluid", action: "Replace", interval: 20000, category: "brake" },
-  { item: "Lubricating Oil", action: "Replace", interval: 2000, category: "engine" },
-  { item: "Lubricating Oil Filter", action: "Replace", interval: 2000, category: "engine" },
-  { item: "Gear Oil", action: "Replace", interval: 6000, category: "transmission" },
-  { item: "Crankcase Breather Pipe", action: "Replace", interval: 10000, category: "engine" },
-  { item: "Engine Fine Filter", action: "Replace", interval: 12000, category: "engine" },
-  { item: "Fuel Line", action: "Inspect", interval: 2000, category: "fuel" },
-  { item: "Fuel Quantity", action: "Inspect", interval: 0, category: "fuel" },
-  { item: "Throttle Operation", action: "Inspect", interval: 2000, category: "engine" },
-  { item: "Fuel Evaporation Control System", action: "Inspect", interval: 2000, category: "fuel" },
-  { item: "Fuel Tank & Charcoal Canister", action: "Inspect", interval: 2000, category: "fuel" },
-  { item: "Drive Belt", action: "Inspect", interval: 4000, category: "engine" },
-  { item: "Belt Chamber / Belt Pulley", action: "Inspect", interval: 12000, category: "engine" },
-  { item: "Valve Clearance", action: "Inspect", interval: 12000, category: "engine" },
-  { item: "Spark Plug", action: "Inspect/Replace", interval: 12000, category: "engine" },
-  { item: "Brake Pad Wear", action: "Inspect", interval: 6000, category: "brake" },
-  { item: "Coolant", action: "Replace", interval: 10000, category: "cooling" },
-  { item: "Engine Idling", action: "Inspect", interval: 6000, category: "engine" },
-  { item: "Clutch Shoe Block", action: "Inspect", interval: 6000, category: "transmission" },
-  { item: "Brake System", action: "Inspect", interval: 6000, category: "brake" },
-  { item: "Headlamp Beam", action: "Inspect", interval: 6000, category: "electrical" },
-  { item: "Lamp and Horn", action: "Inspect", interval: 6000, category: "electrical" },
-  { item: "Side/Main Bracket", action: "Inspect", interval: 6000, category: "chassis" },
-  { item: "Suspension", action: "Inspect", interval: 6000, category: "chassis" },
-  { item: "Steering Column Bearing", action: "Inspect", interval: 6000, category: "steering" },
-  { item: "Wheels & Tires", action: "Inspect", interval: 6000, category: "chassis" },
-  { item: "Nuts, Bolts, Fasteners", action: "Inspect", interval: 6000, category: "general" }
+  // ── Fluids & Lubrication ──────────────────────────────────────────
+  // Oil: R every 2,000 km (break-in at 500 km counts as first change)
+  { item: "Lubricating Oil",           action: "Replace",         interval: 2000,  category: "engine" },
+  // Oil Filter Screen: I every 2,000 km
+  { item: "Oil Filter Screen",         action: "Inspect",         interval: 2000,  category: "engine" },
+  // Gear Oil: R at 2k, then R every 10,000 km
+  { item: "Gear Oil",                  action: "Replace",         interval: 10000, category: "transmission" },
+  // Brake Fluid: I every 6k (calendar replace every 2 years)
+  { item: "Brake Fluid",               action: "Inspect",         interval: 6000,  category: "brake" },
+  // Coolant: I every 2k (calendar replace every 3 years)
+  { item: "Coolant",                   action: "Inspect",         interval: 2000,  category: "cooling" },
+
+  // ── Engine & Fuel System ──────────────────────────────────────────
+  // Spark Plug: I at 6k; R at 12k, 24k, 36k  → base interval 6k
+  { item: "Spark Plug",                action: "Inspect/Replace", interval: 6000,  category: "engine" },
+  // Air Filter / CVT Sponge: I every 2k, R every 10k
+  { item: "Air Filter / CVT Sponge",   action: "Inspect",         interval: 2000,  category: "engine" },
+  // Valve Clearance: I every 6k
+  { item: "Valve Clearance",           action: "Inspect",         interval: 6000,  category: "engine" },
+  // Engine Fine Filter: I at 12k, 24k, 36k  → interval 12k
+  { item: "Engine Fine Filter",        action: "Inspect",         interval: 12000, category: "engine" },
+  // Fuel Line & Throttle: I every 6k
+  { item: "Fuel Line",                 action: "Inspect",         interval: 6000,  category: "fuel" },
+  { item: "Throttle Operation",        action: "Inspect",         interval: 6000,  category: "engine" },
+  // Crankcase Breather: I every 6k
+  { item: "Crankcase Breather",        action: "Inspect",         interval: 6000,  category: "engine" },
+
+  // ── Drive Train & Braking ─────────────────────────────────────────
+  // Drive Belt: I at 12k; R at 24k  → base interval 12k
+  { item: "Drive Belt",                action: "Inspect/Replace", interval: 12000, category: "engine" },
+  // Belt Chamber / Pulley: I every 4k
+  { item: "Belt Chamber / Belt Pulley",action: "Inspect",         interval: 4000,  category: "engine" },
+  // Brake System & Pads: I every 6k (also a pre-drive check)
+  { item: "Brake System & Pads",       action: "Inspect",         interval: 6000,  category: "brake" },
+  // Worn Clutch Shoe: I at 12k, 24k, 36k  → interval 12k
+  { item: "Clutch Shoe",               action: "Inspect",         interval: 12000, category: "transmission" },
+
+  // ── Chassis & Electrical ──────────────────────────────────────────
+  { item: "Suspension",                action: "Inspect",         interval: 6000,  category: "chassis" },
+  // Steering Column Bearing: I at 12k, 24k, 36k  → interval 12k
+  { item: "Steering Column Bearing",   action: "Inspect",         interval: 12000, category: "steering" },
+  // Battery: I at 0.5k, then every 4k
+  { item: "Battery",                   action: "Inspect",         interval: 4000,  category: "electrical" },
+  // Nuts, Bolts, Fasteners: I at 0.5k and every 6k
+  { item: "Nuts, Bolts, Fasteners",    action: "Inspect",         interval: 6000,  category: "general" },
+  // Wheels & Tires: I every 6k (also a pre-drive check)
+  { item: "Wheels & Tires",            action: "Inspect",         interval: 6000,  category: "chassis" },
+  { item: "Headlamp Beam",             action: "Inspect",         interval: 6000,  category: "electrical" },
+  { item: "Lamp and Horn",             action: "Inspect",         interval: 6000,  category: "electrical" },
+
+  // ── Pre-Drive Checks (every trip — interval: 0) ───────────────────
+  { item: "Fuel Quantity",             action: "Inspect",         interval: 0,     category: "fuel" },
+  { item: "Brake System (Pre-Drive)",  action: "Inspect",         interval: 0,     category: "brake" },
+  { item: "Tires (Pre-Drive)",         action: "Inspect",         interval: 0,     category: "chassis" }
 ];
 
 let currentFilter = 'all';
 let maintenanceData = [];
 let currentTab = 'schedule';
 let serviceHistory = [];
-
-
 
 // Listen for authentication state changes
 auth.onAuthStateChanged((user) => {
@@ -401,12 +428,8 @@ auth.onAuthStateChanged((user) => {
     tabText.textContent = 'Signed In';
     authTab.classList.remove('bg-blue-600', 'hover:bg-blue-700');
     authTab.classList.add('bg-green-600', 'hover:bg-green-700');
-    // Automatically load the user's logs when signed in
     loadServiceHistory();
-    // Auto-collapse auth box after successful sign in
-    setTimeout(() => {
-      slideOutAuthBox();
-    }, 2000);
+    setTimeout(() => { slideOutAuthBox(); }, 2000);
   } else {
     currentUserId = null;
     signInButtons.classList.remove('hidden');
@@ -414,20 +437,15 @@ auth.onAuthStateChanged((user) => {
     tabText.textContent = 'Sign In';
     authTab.classList.remove('bg-green-600', 'hover:bg-green-700');
     authTab.classList.add('bg-blue-600', 'hover:bg-blue-700');
-    // Load from localStorage when signed out
     loadServiceHistoryLocal();
   }
 });
 
-// --- Function to trigger Google Sign-In ---
 function signInWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  // Request Google sign-in using a pop-up
   auth.signInWithPopup(provider)
     .then((result) => {
-      // The onAuthStateChanged listener handles successful sign-in
       showSuccessMessage(`Welcome ${result.user.displayName}!`);
-      console.log("Firebase Sign-in successful:", result.user.email);
     })
     .catch((error) => {
       console.error("Firebase Sign-in error:", error);
@@ -439,10 +457,7 @@ function signOut() {
   auth.signOut()
     .then(() => {
       showSuccessMessage('Signed out successfully');
-      // Refresh the page after a brief delay to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      setTimeout(() => { window.location.reload(); }, 1500);
     })
     .catch((error) => {
       console.error('Sign-out error:', error);
@@ -451,29 +466,19 @@ function signOut() {
 }
 
 function slideOutAuthBox() {
-  const authBox = document.getElementById('authBox');
-  authBox.classList.add('translate-x-full');
+  document.getElementById('authBox').classList.add('translate-x-full');
 }
 
 function slideInAuthBox() {
-  const authBox = document.getElementById('authBox');
-  authBox.classList.remove('translate-x-full');
-}
-
-function getNextDueKm(currentKm, interval) {
-  if (interval === 0) return 0;
-  return Math.ceil(currentKm / interval) * interval;
+  document.getElementById('authBox').classList.remove('translate-x-full');
 }
 
 function getMaintenanceStatus(currentKm, interval, lastServiceKm = 0) {
   if (interval === 0) {
     return { status: 'predrive', label: 'Pre-Drive Check', class: 'bg-blue-100 text-blue-800', priority: 3 };
   }
-  
-  // Calculate next due based on actual last service
   const nextDue = lastServiceKm + interval;
   const kmUntilDue = nextDue - currentKm;
-  
   if (kmUntilDue <= 0) {
     return { status: 'critical', label: 'Overdue', class: 'bg-red-100 text-red-800', priority: 1 };
   } else if (kmUntilDue <= 1000) {
@@ -485,31 +490,22 @@ function getMaintenanceStatus(currentKm, interval, lastServiceKm = 0) {
 
 function showTab(tab) {
   currentTab = tab;
-  
-  // Update active tab
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.classList.remove('active', 'bg-blue-600', 'text-white');
     btn.classList.add('text-gray-600', 'hover:bg-gray-100');
   });
-  
   if (event && event.target) {
     event.target.classList.add('active', 'bg-blue-600', 'text-white');
     event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
   }
-  
-  // Show/hide content
   document.getElementById('maintenanceCard').classList.add('hidden');
   document.getElementById('historyCard').classList.add('hidden');
   document.getElementById('logServiceCard').classList.add('hidden');
-  
   if (tab === 'schedule') {
     document.getElementById('maintenanceCard').classList.remove('hidden');
   } else if (tab === 'history') {
     document.getElementById('historyCard').classList.remove('hidden');
-    // Force load service history if not already loaded
-    if (serviceHistory.length === 0) {
-      loadServiceHistoryLocal();
-    }
+    if (serviceHistory.length === 0) loadServiceHistoryLocal();
     renderHistory();
   } else if (tab === 'log') {
     document.getElementById('logServiceCard').classList.remove('hidden');
@@ -518,222 +514,103 @@ function showTab(tab) {
 }
 
 function getLastServiceKm(itemName) {
-  const services = serviceHistory.filter(service => service.item === itemName);
+  const services = serviceHistory.filter(s => s.item === itemName);
   if (services.length === 0) return 0;
-  return Math.max(...services.map(service => service.odometer));
+  return Math.max(...services.map(s => s.odometer));
 }
 
-// --- Function to load the user's service history from Firestore ---
 async function loadServiceHistory() {
-  if (!currentUserId) {
-    return loadServiceHistoryLocal(); // Load from localStorage when not signed in
-  }
-
-  // Wait a moment for authentication to fully complete
+  if (!currentUserId) return loadServiceHistoryLocal();
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  const userId = currentUserId;
-  
-  // Check if user is still authenticated
-  if (!auth.currentUser) {
-    console.log('User not authenticated, using local storage');
-    return loadServiceHistoryLocal();
-  }
-  
+  if (!auth.currentUser) return loadServiceHistoryLocal();
   try {
-    // Ensure user is authenticated and get fresh token
     const user = auth.currentUser;
-    await user.getIdToken(true); // Force token refresh for security rules
-    console.log('User authenticated with fresh token');
-    
-    // Query only user's own records (security rules will enforce this)
+    await user.getIdToken(true);
     const snapshot = await db.collection('serviceHistory')
-      .where('userId', '==', userId)
+      .where('userId', '==', currentUserId)
       .orderBy('timestamp', 'desc')
       .get();
-    
     serviceHistory = [];
-    
     snapshot.forEach(doc => {
       const data = doc.data();
-      // Convert Firestore timestamps to ISO strings for consistency
-      if (data.createdAt && data.createdAt.toDate) {
-        data.createdAt = data.createdAt.toDate().toISOString();
-      }
-      if (data.updatedAt && data.updatedAt.toDate) {
-        data.updatedAt = data.updatedAt.toDate().toISOString();
-      }
+      if (data.createdAt && data.createdAt.toDate) data.createdAt = data.createdAt.toDate().toISOString();
+      if (data.updatedAt && data.updatedAt.toDate) data.updatedAt = data.updatedAt.toDate().toISOString();
       serviceHistory.push({ id: doc.id, ...data });
     });
-    
-    // Also save to localStorage as backup with user-specific key
-    const storageKey = getStorageKey();
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-    
-    console.log(`Secure data loaded from Firebase: ${serviceHistory.length} records`);
+    localStorage.setItem(getStorageKey(), JSON.stringify(serviceHistory));
     showSuccessMessage(`Synced ${serviceHistory.length} records from Firebase!`);
     return serviceHistory;
   } catch (error) {
     console.error('Firebase load error:', error);
-    
-    // Handle different error types appropriately
-    if (error.code === 'permission-denied') {
-      console.log('Access denied - using local storage mode.');
-      showErrorMessage('Access denied. Using local storage mode.');
-    } else if (error.code === 'unauthenticated') {
-      console.log('Authentication expired - using local storage mode.');
-      showErrorMessage('Please sign in again. Using local storage mode.');
-    } else {
-      console.log('Firebase connection failed - using local storage mode.');
-      showErrorMessage('Firebase connection failed. Using local storage mode.');
-    }
-    
+    showErrorMessage('Firebase connection failed. Using local storage mode.');
     return loadServiceHistoryLocal();
   }
 }
 
-// Load service history from localStorage (fallback)
 function loadServiceHistoryLocal() {
-  const storageKey = getStorageKey();
-  const stored = localStorage.getItem(storageKey);
+  const stored = localStorage.getItem(getStorageKey());
   serviceHistory = stored ? JSON.parse(stored) : [];
-  console.log(`Loaded ${serviceHistory.length} records from ${storageKey}`);
   return serviceHistory;
 }
 
-// Get storage key based on user authentication status
 function getStorageKey() {
-  if (currentUserId) {
-    return `vehicleServiceHistory_${currentUserId}`;
-  } else {
-    return 'vehicleServiceHistory_guest';
-  }
+  return currentUserId ? `vehicleServiceHistory_${currentUserId}` : 'vehicleServiceHistory_guest';
 }
 
-// Save service history to Firebase or localStorage
-async function saveServiceHistory() {
-  const storageKey = getStorageKey();
-  
-  if (currentUserId) {
-    try {
-      // Save to Firebase - this is handled individually per record
-      console.log('Service history synced to Firebase');
-    } catch (error) {
-      console.error('Error saving to Firebase:', error);
-      // Fallback to localStorage with user-specific key
-      localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-    }
-  } else {
-    // Save to localStorage when not signed in (guest mode)
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-  }
-}
-
-// --- Function to save individual service record ---
 async function saveServiceRecord(serviceRecord) {
-  const storageKey = getStorageKey();
-  
-  // Always save to localStorage first
   serviceHistory.push(serviceRecord);
-  localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-  
-  if (!currentUserId || !auth.currentUser) {
-    // Save to localStorage when not signed in (guest mode)
-    console.log('Service record saved locally (guest mode)');
-    return serviceRecord;
-  }
-
+  localStorage.setItem(getStorageKey(), JSON.stringify(serviceHistory));
+  if (!currentUserId || !auth.currentUser) return serviceRecord;
   try {
-    // Ensure user is authenticated and get fresh token
     const user = auth.currentUser;
-    await user.getIdToken(true); // Force token refresh
-    
-    // Add userId to the record for secure rules compliance
+    await user.getIdToken(true);
     const recordWithUserId = {
       ...serviceRecord,
       userId: currentUserId,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    
-    // Save to Firebase Firestore with proper authentication
     const docRef = await db.collection('serviceHistory').add(recordWithUserId);
-    
-    // Update the local record with Firebase ID
-    const recordIndex = serviceHistory.findIndex(record => record.id === serviceRecord.id);
-    if (recordIndex !== -1) {
-      serviceHistory[recordIndex].firebaseId = docRef.id;
-      localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
+    const idx = serviceHistory.findIndex(r => r.id === serviceRecord.id);
+    if (idx !== -1) {
+      serviceHistory[idx].firebaseId = docRef.id;
+      localStorage.setItem(getStorageKey(), JSON.stringify(serviceHistory));
     }
-    
-    console.log(`Service record saved securely for user: ${currentUserId}`);
-    return serviceRecord;
   } catch (error) {
     console.error('Firebase save failed:', error);
-    
-    // Record is already saved locally, so just log the Firebase failure
-    if (error.code === 'permission-denied') {
-      console.log('Authentication required. Record saved locally only.');
-    } else if (error.message.includes('permissions')) {
-      console.log('Access denied. Record saved locally only.');
-    } else {
-      console.log('Firebase connection failed. Record saved locally only.');
-    }
-    
-    return serviceRecord;
   }
+  return serviceRecord;
 }
 
 async function logService(event) {
   event.preventDefault();
-  
   const item = document.getElementById('serviceItem').value;
   const odometerValue = document.getElementById('serviceOdometer').value;
   const date = document.getElementById('serviceDate').value;
   const costValue = document.getElementById('serviceCost').value;
   const notes = document.getElementById('serviceNotes').value;
-  
-  // Validate required fields
   if (!item || !odometerValue || !date) {
     showErrorMessage('Please fill in all required fields (Service Item, Odometer, Date)');
     return;
   }
-  
   const odometer = parseInt(odometerValue);
   const cost = parseFloat(costValue) || 0;
-  
-  // Validate odometer reading
   if (isNaN(odometer) || odometer <= 0) {
     showErrorMessage('Please enter a valid odometer reading');
     return;
   }
-  
   const serviceRecord = {
-    id: Date.now() + Math.random(), // Ensure unique ID
-    item,
-    odometer,
-    date,
-    cost,
+    id: Date.now() + Math.random(),
+    item, odometer, date, cost,
     notes: notes.trim(),
     timestamp: new Date().toISOString()
   };
-  
   try {
-    // Save the service record
     await saveServiceRecord(serviceRecord);
-    
-    // Clear form after successful save
     clearForm();
-    
-    // Refresh current view if needed
-    if (currentTab === 'history') {
-      renderHistory();
-    }
-    
+    if (currentTab === 'history') renderHistory();
     showSuccessMessage('Service record saved successfully!');
-    
   } catch (error) {
-    console.error('Error in logService:', error);
     showErrorMessage('Failed to save service record. Please try again.');
   }
 }
@@ -746,7 +623,6 @@ function clearForm() {
 function populateServiceItems() {
   const select = document.getElementById('serviceItem');
   select.innerHTML = '<option value="">Select maintenance item...</option>';
-  
   maintenanceItems.forEach(item => {
     const option = document.createElement('option');
     option.value = item.item;
@@ -758,31 +634,21 @@ function populateServiceItems() {
 function renderHistory() {
   const historyList = document.getElementById('historyList');
   const historyEmpty = document.getElementById('historyEmpty');
-  const totalServices = document.getElementById('totalServices');
-  
-  totalServices.textContent = serviceHistory.length;
-  
+  document.getElementById('totalServices').textContent = serviceHistory.length;
   if (serviceHistory.length === 0) {
     historyEmpty.classList.remove('hidden');
     historyList.classList.add('hidden');
     return;
   }
-  
   historyEmpty.classList.add('hidden');
   historyList.classList.remove('hidden');
-  
-  // Sort by date (newest first)
   const sortedHistory = [...serviceHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
-  
   historyList.innerHTML = '';
-  
   sortedHistory.forEach(service => {
     const serviceCard = document.createElement('div');
     serviceCard.className = 'bg-gray-50 rounded-lg p-6 border-l-4 border-blue-500';
-    
-    const categoryIcon = getCategoryIcon(maintenanceItems.find(item => item.item === service.item)?.category || 'general');
+    const categoryIcon = getCategoryIcon(maintenanceItems.find(i => i.item === service.item)?.category || 'general');
     const costDisplay = service.cost > 0 ? `<span class="text-green-600 font-semibold">$${service.cost.toFixed(2)}</span>` : '<span class="text-gray-400">No cost recorded</span>';
-    
     serviceCard.innerHTML = `
       <div class="flex justify-between items-start mb-3">
         <div class="flex items-center">
@@ -799,53 +665,27 @@ function renderHistory() {
       </div>
       ${service.notes ? `<div class="bg-white rounded p-3 text-sm text-gray-700"><strong>Notes:</strong> ${service.notes}</div>` : ''}
       <div class="flex justify-end mt-3">
-        <button onclick="deleteService(${service.id})" class="text-red-500 hover:text-red-700 text-sm font-medium">
-          🗑️ Delete Record
-        </button>
-      </div>
-    `;
-    
+        <button onclick="deleteService(${service.id})" class="text-red-500 hover:text-red-700 text-sm font-medium">🗑️ Delete Record</button>
+      </div>`;
     historyList.appendChild(serviceCard);
   });
 }
 
-// --- Function to delete service record from Firebase and local storage ---
 async function deleteService(serviceId) {
-  if (!confirm('Are you sure you want to delete this service record?')) {
-    return;
-  }
-  
+  if (!confirm('Are you sure you want to delete this service record?')) return;
   try {
-    // Find the record to get Firebase ID if it exists
-    const record = serviceHistory.find(service => service.id === serviceId);
-    
+    const record = serviceHistory.find(s => s.id === serviceId);
     if (currentUserId && auth.currentUser && record && record.firebaseId) {
-      // Ensure user is authenticated and get fresh token
-      const user = auth.currentUser;
-      await user.getIdToken(true); // Force token refresh for security rules
-      
-      // Delete from Firebase Firestore using the Firebase ID
+      await auth.currentUser.getIdToken(true);
       await db.collection('serviceHistory').doc(record.firebaseId).delete();
-      console.log(`Service record securely deleted from Firebase for user: ${currentUserId}`);
     }
-    
-    // Remove from local array
-    serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
-    
-    // Update localStorage with user-specific key
-    const storageKey = getStorageKey();
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-    
+    serviceHistory = serviceHistory.filter(s => s.id !== serviceId);
+    localStorage.setItem(getStorageKey(), JSON.stringify(serviceHistory));
     showSuccessMessage('Service record deleted successfully!');
     renderHistory();
   } catch (error) {
-    console.error('Firebase delete failed:', error);
-    
-    // Still remove from local array as fallback
-    serviceHistory = serviceHistory.filter(service => service.id !== serviceId);
-    const storageKey = getStorageKey();
-    localStorage.setItem(storageKey, JSON.stringify(serviceHistory));
-    
+    serviceHistory = serviceHistory.filter(s => s.id !== serviceId);
+    localStorage.setItem(getStorageKey(), JSON.stringify(serviceHistory));
     showSuccessMessage('Service record deleted locally!');
     renderHistory();
   }
@@ -853,167 +693,108 @@ async function deleteService(serviceId) {
 
 function getCategoryIcon(category) {
   const icons = {
-    "engine": "🔧",
-    "brake": "🛑",
-    "electrical": "⚡",
-    "fuel": "⛽",
-    "transmission": "⚙️",
-    "cooling": "❄️",
-    "chassis": "🚗",
-    "steering": "🎯",
-    "general": "🔩"
+    engine: "🔧", brake: "🛑", electrical: "⚡", fuel: "⛽",
+    transmission: "⚙️", cooling: "❄️", chassis: "🚗", steering: "🎯", general: "🔩"
   };
   return icons[category] || "🔧";
 }
 
 function checkMaintenance() {
   const odo = parseInt(document.getElementById("odo").value);
-  
-  if (!odo || odo <= 0) {
-    alert("Please enter a valid odometer reading");
-    return;
-  }
+  if (!odo || odo <= 0) { alert("Please enter a valid odometer reading"); return; }
 
   maintenanceData = [];
-  let criticalCount = 0;
-  let soonCount = 0;
-  let goodCount = 0;
-  let preDriveCount = 0;
+  let criticalCount = 0, soonCount = 0, goodCount = 0, preDriveCount = 0;
 
   maintenanceItems.forEach(item => {
     const lastServiceKm = getLastServiceKm(item.item);
     const nextDue = item.interval === 0 ? 0 : lastServiceKm + item.interval;
     const kmUntilDue = item.interval === 0 ? 0 : nextDue - odo;
     const statusInfo = getMaintenanceStatus(odo, item.interval, lastServiceKm);
-    
-    const itemData = {
-      ...item,
-      nextDue,
-      kmUntilDue,
-      statusInfo,
-      lastServiceKm,
+    maintenanceData.push({
+      ...item, nextDue, kmUntilDue, statusInfo, lastServiceKm,
       lastServiceDate: getLastServiceDate(item.item)
-    };
-    
-    maintenanceData.push(itemData);
-    
-    // Count items by status
+    });
     if (statusInfo.status === 'critical') criticalCount++;
     else if (statusInfo.status === 'soon') soonCount++;
     else if (statusInfo.status === 'good') goodCount++;
     else if (statusInfo.status === 'predrive') preDriveCount++;
   });
 
-  // Sort by priority (critical first, then by km until due)
   maintenanceData.sort((a, b) => {
-    if (a.statusInfo.priority !== b.statusInfo.priority) {
-      return a.statusInfo.priority - b.statusInfo.priority;
-    }
+    if (a.statusInfo.priority !== b.statusInfo.priority) return a.statusInfo.priority - b.statusInfo.priority;
     if (a.interval === 0 && b.interval === 0) return 0;
     if (a.interval === 0) return 1;
     if (b.interval === 0) return -1;
     return a.kmUntilDue - b.kmUntilDue;
   });
 
-  // Update summary cards
   document.getElementById("allCount").textContent = maintenanceData.length;
   document.getElementById("criticalCount").textContent = criticalCount;
   document.getElementById("soonCount").textContent = soonCount;
   document.getElementById("goodCount").textContent = goodCount;
   document.getElementById("preDriveCount").textContent = preDriveCount;
 
-  // Show results
   document.getElementById("summaryDashboard").classList.remove("hidden");
   document.getElementById("navigationTabs").classList.remove("hidden");
   document.getElementById("maintenanceCard").classList.remove("hidden");
   document.getElementById("welcomeState").classList.add("hidden");
-
   renderTable();
 }
 
 function getLastServiceDate(itemName) {
-  const services = serviceHistory.filter(service => service.item === itemName);
+  const services = serviceHistory.filter(s => s.item === itemName);
   if (services.length === 0) return null;
-  const latestService = services.reduce((latest, service) => 
-    new Date(service.date) > new Date(latest.date) ? service : latest
-  );
-  return latestService.date;
+  return services.reduce((latest, s) => new Date(s.date) > new Date(latest.date) ? s : latest).date;
 }
 
 function renderTable() {
   const tbody = document.getElementById("maintenanceTableBody");
-  
-  const filteredData = currentFilter === 'all' ? maintenanceData : 
-                      maintenanceData.filter(item => item.statusInfo.status === currentFilter);
+  const filteredData = currentFilter === 'all' ? maintenanceData :
+                       maintenanceData.filter(item => item.statusInfo.status === currentFilter);
 
-  // First, slide out existing rows
   const existingRows = tbody.querySelectorAll('tr');
   if (existingRows.length > 0) {
     existingRows.forEach((row, index) => {
-      setTimeout(() => {
-        row.style.transform = 'translateX(-100%)';
-        row.style.opacity = '0';
-      }, index * 50);
+      setTimeout(() => { row.style.transform = 'translateX(-100%)'; row.style.opacity = '0'; }, index * 50);
     });
-    
-    // Calculate slide out duration based on number of existing rows
-    const slideOutDuration = existingRows.length * 50 + 300;
-    
-    // Wait for slide out animation to complete, then clear and add new rows
-    setTimeout(() => {
-      tbody.innerHTML = "";
-      addNewRows();
-    }, slideOutDuration);
+    setTimeout(() => { tbody.innerHTML = ""; addNewRows(); }, existingRows.length * 50 + 300);
   } else {
-    // No existing rows, add new ones immediately
     addNewRows();
   }
 
   function addNewRows() {
     if (filteredData.length === 0) {
-      // Show empty state with smooth animation
       const emptyRow = document.createElement("tr");
       emptyRow.className = "transition-all duration-500";
       emptyRow.style.transform = 'translateY(20px)';
       emptyRow.style.opacity = '0';
-      
       emptyRow.innerHTML = `
         <td colspan="5" class="px-6 py-16 text-center">
           <div class="flex flex-col items-center">
-            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <span class="text-2xl">📋</span>
-            </div>
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4"><span class="text-2xl">📋</span></div>
             <h3 class="text-lg font-semibold text-gray-600 mb-2">No items in this category</h3>
             <p class="text-gray-500">Try selecting a different filter or check your maintenance data</p>
           </div>
-        </td>
-      `;
-      
+        </td>`;
       tbody.appendChild(emptyRow);
-      
-      // Animate in the empty state
-      setTimeout(() => {
-        emptyRow.style.transform = 'translateY(0)';
-        emptyRow.style.opacity = '1';
-      }, 100);
-      
+      setTimeout(() => { emptyRow.style.transform = 'translateY(0)'; emptyRow.style.opacity = '1'; }, 100);
       return;
     }
-    
-    // Add rows with data
+
     filteredData.forEach((item, index) => {
       const row = document.createElement("tr");
       row.className = "hover:bg-gray-50 transition-all duration-300";
       row.style.transform = 'translateX(100%)';
       row.style.opacity = '0';
 
-      const nextDueDisplay = item.interval === 0 ? 
+      const nextDueDisplay = item.interval === 0 ?
         '<span class="text-blue-600 font-semibold">Every Drive</span>' :
         `<span class="font-mono text-gray-900">${item.nextDue.toLocaleString()}</span>
          <div class="text-sm text-gray-500">${item.kmUntilDue > 0 ? `in ${item.kmUntilDue.toLocaleString()} km` : 'overdue'}</div>`;
 
-      const lastServiceDisplay = item.lastServiceKm > 0 ? 
-        `<div class="text-xs text-green-600 mt-1">Last: ${item.lastServiceKm.toLocaleString()} km</div>` : 
+      const lastServiceDisplay = item.lastServiceKm > 0 ?
+        `<div class="text-xs text-green-600 mt-1">Last: ${item.lastServiceKm.toLocaleString()} km</div>` :
         '<div class="text-xs text-gray-400 mt-1">Never serviced</div>';
 
       row.innerHTML = `
@@ -1027,76 +808,45 @@ function renderTable() {
             </div>
           </div>
         </td>
-        <td class="px-6 py-4">
-          <span class="font-medium text-gray-700">${item.action}</span>
-        </td>
+        <td class="px-6 py-4"><span class="font-medium text-gray-700">${item.action}</span></td>
         <td class="px-6 py-4 text-center">
-          <span class="font-mono text-gray-600">
-            ${item.interval === 0 ? 'Pre-Drive' : item.interval.toLocaleString() + ' km'}
-          </span>
+          <span class="font-mono text-gray-600">${item.interval === 0 ? 'Pre-Drive' : item.interval.toLocaleString() + ' km'}</span>
         </td>
+        <td class="px-6 py-4 text-center">${nextDueDisplay}</td>
         <td class="px-6 py-4 text-center">
-          ${nextDueDisplay}
-        </td>
-        <td class="px-6 py-4 text-center">
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${item.statusInfo.class}">
-            ${item.statusInfo.label}
-          </span>
-        </td>
-      `;
-      
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${item.statusInfo.class}">${item.statusInfo.label}</span>
+        </td>`;
+
       tbody.appendChild(row);
-      
-      // Slide in each row with a staggered delay
-      setTimeout(() => {
-        row.style.transform = 'translateX(0)';
-        row.style.opacity = '1';
-      }, index * 100 + 50);
+      setTimeout(() => { row.style.transform = 'translateX(0)'; row.style.opacity = '1'; }, index * 100 + 50);
     });
   }
 }
 
 function filterItems(filter) {
   currentFilter = filter;
-  
-  // Update active card styling
   document.querySelectorAll('.filter-card').forEach(card => {
     card.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
     card.classList.add('bg-white');
   });
-  
-  // Find and highlight the active card
   const activeCard = event ? event.currentTarget : document.querySelector(`[onclick="filterItems('${filter}')"]`);
   if (activeCard) {
     activeCard.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
     activeCard.classList.remove('bg-white');
   }
-  
-  // Scroll to the maintenance table section
   const maintenanceCard = document.getElementById('maintenanceCard');
   if (maintenanceCard && !maintenanceCard.classList.contains('hidden')) {
-    maintenanceCard.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
+    maintenanceCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  
   renderTable();
 }
 
-// UI Feedback Functions
-function showSuccessMessage(message) {
-  showToast(message, 'success');
-}
-
-function showErrorMessage(message) {
-  showToast(message, 'error');
-}
+function showSuccessMessage(message) { showToast(message, 'success'); }
+function showErrorMessage(message) { showToast(message, 'error'); }
 
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-medium transform transition-all duration-300 translate-x-full`;
-  
   if (type === 'success') {
     toast.classList.add('bg-green-600');
     toast.innerHTML = `<div class="flex items-center"><span class="mr-2">✅</span>${message}</div>`;
@@ -1107,48 +857,26 @@ function showToast(message, type = 'info') {
     toast.classList.add('bg-blue-600');
     toast.innerHTML = `<div class="flex items-center"><span class="mr-2">ℹ️</span>${message}</div>`;
   }
-  
   document.body.appendChild(toast);
-  
-  // Animate in
-  setTimeout(() => {
-    toast.classList.remove('translate-x-full');
-  }, 100);
-  
-  // Auto remove after 4 seconds
+  setTimeout(() => { toast.classList.remove('translate-x-full'); }, 100);
   setTimeout(() => {
     toast.classList.add('translate-x-full');
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.parentNode.removeChild(toast);
-      }
-    }, 300);
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
   }, 4000);
 }
 
-// Initialize form and event listeners
 document.addEventListener('DOMContentLoaded', function() {
-  // Load service history immediately from localStorage
   loadServiceHistoryLocal();
-  
-  // Set default date to today
   document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
-  
-  // Add form submission handler
   document.getElementById('serviceForm').addEventListener('submit', logService);
-  
-  // Initialize navigation tab styles
   const activeTab = document.querySelector('.nav-tab.active');
   if (activeTab) {
     activeTab.classList.add('bg-blue-600', 'text-white');
     activeTab.classList.remove('text-gray-600', 'hover:bg-gray-100');
   }
-  
   document.querySelectorAll('.nav-tab:not(.active)').forEach(btn => {
     btn.classList.add('text-gray-600', 'hover:bg-gray-100');
   });
-  
-  // Initialize filter card - set "All Items" as default active
   setTimeout(() => {
     const allItemsCard = document.querySelector(`[onclick="filterItems('all')"]`);
     if (allItemsCard) {
@@ -1158,13 +886,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 100);
 });
 
-// Allow Enter key to trigger check
 document.getElementById("odo").addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {
-    checkMaintenance();
-  }
+  if (event.key === "Enter") checkMaintenance();
 });
 </script>
-
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98bb2faef16edb1f',t:'MTc1OTk4NDY4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
